@@ -67,7 +67,7 @@ void POSTjson(std::string https, std::string JWT){
         "visible": false
     })";
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
-	SETcurlData("https://api.warframe.market/v2/order", {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});
+	SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});
 	CURLcode res = curl_easy_perform(curl);
 	if (res != CURLE_OK) {
 		std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << "\n";

@@ -9,7 +9,7 @@ int main(int argc, char* argv[]) {
     setup();
     std::cout << "runs" << std::endl;
     // json res = GETjson("https://api.warframe.market/v2/orders/my", {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer JWT"}); 
-    POSTjson("", argv[1]);    
+    POSTjson("https://api.warframe.market/v2/order", argv[1]);    
     // json items = GETjson("https://api.warframe.market/v2/items", {"accept: application/json", "Language: en"});
     // while (true)
     // {
