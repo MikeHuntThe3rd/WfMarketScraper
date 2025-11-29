@@ -5,11 +5,16 @@
 #include <chrono>
 #include <limits>
 #include <optional>
+#include <algorithm>
 #include "json.hpp"
 #include "CurlReq.hpp"
 
 using json = nlohmann::json;
-extern std::string slug;
-bool CheckMargin(std::string item);
-bool TradeFrenquency(std::optional<int> rank = std::nullopt);
-bool RankBasedMargin(json orders);
+namespace Sorting {
+    extern std::string slug;
+    bool ValidTrade(std::string item, std::vector<std::string> tags);
+    bool Frenquency(std::optional<int> rank = std::nullopt);
+    bool RankBasedMargin(json orders);
+    bool AyatanMargin(json orders);
+    bool BasicMargin(json orders);
+}
