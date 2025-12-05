@@ -57,11 +57,12 @@ namespace CURL_OP {
 	void POSTjson(std::string https, std::string JWT){
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 		std::string body = R"({
-			"itemId": "54aae292e7798909064f1575",
+			"itemId": "59eba86952f90ed715e1415a",
 			"type": "sell",
 			"platinum": 38,
-			"quantity": 12,
-			"visible": false
+			"quantity": 1,
+			"visible": false,
+			"perTrade": 1
 		})";
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
 		SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});
