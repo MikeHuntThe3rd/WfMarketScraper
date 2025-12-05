@@ -27,12 +27,13 @@ namespace Sorting {
     {
         int cyanStars, amberStars,
         buy = std::numeric_limits<int>::min(),
-        sell = std::numeric_limits<int>::max();;
+        sell = std::numeric_limits<int>::max();
+        bool sell_trade = false, buy_trade = false;
     };
     //functions
-    bool ValidTrade(std::string item, std::vector<std::string> tags);
     bool Frequency(itemType type, std::optional<std::any> data = std::nullopt);
-    bool RankBasedMargin(json orders);
-    bool AyatanMargin(json orders);
+    void ValidTrade(std::string item, std::vector<std::string> tags);
+    std::optional<int> RankBasedMargin(json orders);
+    std::optional<ayatan_sculpture> AyatanMargin(json orders);
     bool BasicMargin(json orders);
 }
