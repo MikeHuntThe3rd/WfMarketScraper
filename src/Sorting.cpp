@@ -1,33 +1,47 @@
 #include "Sorting.hpp"
 namespace Sorting {
     std::string slug = "";
-    bool Frenquency(std::optional<int> rank){
+    bool Frequency(itemType type, std::optional<std::any> data = std::nullopt){
         json stats = CURL_OP::GETjson("https://api.warframe.market/v1/items/" + (std::string)slug  + "/statistics", {"accept: application/json", "Language: en"});
         int vol = 0;
-        for(json curr : stats["payload"]["statistics_closed"]["48hours"]){
-            if(rank.has_value() && rank.value() == (int)curr["mod_rank"]){
+        switch (type)
+        {
+        case itemType::basic :
+            for(json curr : stats["payload"]["statistics_closed"]["48hours"]){
                 vol += (int)curr["volume"];
             }
-            else{
-                vol += (int)curr["volume"];
+            break;
+        case itemType::mod :
+            int rank = std::any_cast<int>(data.value());
+            for(json curr : stats["payload"]["statistics_closed"]["48hours"]){
+                if((int)curr["mod_rank"] == rank){
+                    vol += (int)curr["volume"];
+                }
             }
+            break;
+        case itemType::Ayatan :
+            int cyan = std::any_cast<ayatan_sculpture>(data.value()).cyanStars;
+            int amber = std::any_cast<ayatan_sculpture>(data.value()).amberStars;
+            for(json curr : stats["payload"]["statistics_closed"]["48hours"]){
+                    if((int)curr["cyan_stars"] == cyan && (int)curr["cyan_stars"] == amber){
+                        vol += (int)curr["volume"];
+                    }
+                }
+            break;
+        default:
+            break;
         }
+        
         if(vol > 96){
-            std::cout << "volume" << vol << std::endl;
-            if(rank.has_value()) std::cout << "rank" << rank.value();
+            // std::cout << "volume" << vol << std::endl;
             return true;
         }
         else{
-            std::cout << "volume" << vol << std::endl;
+            // std::cout << "volume" << vol << std::endl;
             return false;
         }
     }
     bool RankBasedMargin(json orders){
-        struct rank
-        {
-            bool sell_trade = false, buy_trade = false;
-            int sell = std::numeric_limits<int>::max(), buy = std::numeric_limits<int>::min();
-        };
         std::unordered_map<int, rank> ranks;
         for(json curr: orders["data"]){
             int key = curr["rank"];
@@ -51,7 +65,7 @@ namespace Sorting {
                 best_margin_key = rank.first;
             }
         }
-        if(margin > 10 && Frenquency({best_margin_key})){
+        if(margin > 10 && Frequency(itemType::mod , {best_margin_key})){
             //std::cout << "rank: " << best_margin_key << std::endl;
             // std::cout << "sell:" << ranks[best_margin_key].sell << std::endl;
             // std::cout << "buy:" << ranks[best_margin_key].buy << std::endl;
@@ -63,29 +77,59 @@ namespace Sorting {
     }
     bool BasicMargin(json orders){
         int buy = std::numeric_limits<int>::min();
-            int sell = std::numeric_limits<int>::max();
-            bool buy_trade = false, sell_trade = false;
-            for(json curr: orders["data"]){
-                if(curr["platinum"] < sell && curr["user"]["status"] == "ingame" && curr["type"] == "sell"){
-                    sell = curr["platinum"];
-                    sell_trade = true;
-                }
-                if(curr["platinum"] > buy && curr["user"]["status"] == "ingame" && curr["type"] == "buy"){
-                    buy = curr["platinum"];
-                    buy_trade = true;
-                }
+        int sell = std::numeric_limits<int>::max();
+        bool buy_trade = false, sell_trade = false;
+        for(json curr: orders["data"]){
+            if(curr["platinum"] < sell && curr["user"]["status"] == "ingame" && curr["type"] == "sell"){
+                sell = curr["platinum"];
+                sell_trade = true;
             }
-            if(sell - buy > 10 && (sell_trade && buy_trade) && Frenquency()){
-                // std::cout << "sell:" << sell << std::endl;
-                // std::cout << "buy:" << buy << std::endl;
-                return true;
+            if(curr["platinum"] > buy && curr["user"]["status"] == "ingame" && curr["type"] == "buy"){
+                buy = curr["platinum"];
+                buy_trade = true;
             }
-            else{
-                return false;
-            }
+        }
+        if((sell_trade && buy_trade) && sell - buy > 10 && Frequency(itemType::basic)){
+            // std::cout << "sell:" << sell << std::endl;
+            // std::cout << "buy:" << buy << std::endl;
+            return true;
+        }
+        else{
+            return false;
+        }
     }
     bool AyatanMargin(json orders){
-        return true;
+        bool buy_trade = false, sell_trade = false;
+        std::vector<ayatan_sculpture> sculptures;
+        auto findElement = [&sculptures](int cyanStars, int amberStars){
+            auto match = std::find_if(sculptures.begin(), sculptures.end(), 
+            [&cyanStars, &amberStars](const ayatan_sculpture& sculpture)
+            {
+                return sculpture.cyanStars == cyanStars && sculpture.amberStars == amberStars;
+            });
+            return match;
+        };
+        auto addIfNew = [&sculptures, findElement](int cyanStars, int amberStars){
+            if(findElement(cyanStars, amberStars) == sculptures.end()){
+                sculptures.push_back({cyanStars, amberStars});
+            }
+        };
+        auto setTradeValue = [&sculptures, findElement](int cyanStars, int amberStars, tradeType type, int value){
+            auto iterator = findElement(cyanStars, amberStars);
+            if(iterator != sculptures.end()){
+                
+            }
+        };
+        for(json order : orders["data"]){
+            if(order["platinum"] < 1 && order["user"]["status"] == "ingame" && order["type"] == "sell"){
+                sell_trade = true;
+            }
+            if(order["platinum"] > 1 && order["user"]["status"] == "ingame" && order["type"] == "buy"){
+                buy_trade = true;
+            }
+        }
+        if((buy_trade && sell_trade) && Frequency(itemType::Ayatan, {}) && 1 > 10) return true;
+        else return false;
     }
     bool ValidTrade(std::string item, std::vector<std::string> tags){
         slug = item;
