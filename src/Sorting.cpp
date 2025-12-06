@@ -1,35 +1,42 @@
 #include "Sorting.hpp"
 namespace Sorting {
     std::string slug = "";
+    std::ofstream logfile;
     bool Frequency(itemType type, std::optional<std::any> data){
         json stats = CURL_OP::GETjson("https://api.warframe.market/v1/items/" + (std::string)slug  + "/statistics", {"accept: application/json", "Language: en"});
         int vol = 0;
         switch (type)
         {
         case itemType::basic :
+            logfile << "----------checking frequency for basic item" << std::endl;
             for(json curr : stats["payload"]["statistics_closed"]["48hours"]){
                 vol += (int)curr["volume"];
             }
+            logfile << "volume min(96): " << vol << std::endl;
             break;
         case itemType::mod :
         {
             int rank = std::any_cast<int>(data.value());
+            logfile << "----------checking frequency for mod item" << std::endl;
             for(json curr : stats["payload"]["statistics_closed"]["48hours"]){
                 if((int)curr["mod_rank"] == rank){
                     vol += (int)curr["volume"];
                 }
             }
+            logfile << "volume min(96): " << vol << std::endl;
             break;
         }
         case itemType::Ayatan :
         {
             int cyan = std::any_cast<ayatan_sculpture>(data.value()).cyanStars;
             int amber = std::any_cast<ayatan_sculpture>(data.value()).amberStars;
+            logfile << "----------checking frequency for ayatan sculpture" << std::endl;
             for(json curr : stats["payload"]["statistics_closed"]["48hours"]){
-                    if((int)curr["cyan_stars"] == cyan && (int)curr["cyan_stars"] == amber){
-                        vol += (int)curr["volume"];
-                    }
+                if((int)curr["cyan_stars"] == cyan && (int)curr["cyan_stars"] == amber){
+                    vol += (int)curr["volume"];
                 }
+            }
+            logfile << "volume min(96): " << vol << std::endl;
             break;
         }
         default:
@@ -63,13 +70,21 @@ namespace Sorting {
         }
         int margin = std::numeric_limits<int>::min();
         int best_margin_key;
+        bool value_found = false;
         for(const auto& rank: ranks){
             if((rank.second.buy_trade && rank.second.sell_trade) && margin < rank.second.sell - rank.second.buy){
                 margin = rank.second.sell - rank.second.buy;
                 best_margin_key = rank.first;
+                value_found = true;
             }
         }
-        if(margin > 10 && Frequency(itemType::mod , best_margin_key)){
+        if(value_found){
+            logfile << "margin: " << margin << std::endl;
+            logfile << "rank: " << best_margin_key << std::endl;
+        }
+        else logfile << "no good mod trade found: " << std::endl;
+        
+        if(value_found && margin > 10 && Frequency(itemType::mod , best_margin_key)){
             //std::cout << "rank: " << best_margin_key << std::endl;
             // std::cout << "sell:" << ranks[best_margin_key].sell << std::endl;
             // std::cout << "buy:" << ranks[best_margin_key].buy << std::endl;
@@ -93,6 +108,8 @@ namespace Sorting {
                 buy_trade = true;
             }
         }
+        logfile << "found sell, buy: "<< sell_trade << buy_trade << std::endl;
+        logfile << "margin: " << sell - buy << std::endl;
         if((sell_trade && buy_trade) && sell - buy > 10 && Frequency(itemType::basic)){
             // std::cout << "sell:" << sell << std::endl;
             // std::cout << "buy:" << buy << std::endl;
@@ -105,6 +122,7 @@ namespace Sorting {
     std::optional<ayatan_sculpture> AyatanMargin(json orders){
         bool buy_trade = false, sell_trade = false;
         std::vector<ayatan_sculpture> sculptures;
+
         auto findElement = [&sculptures](int cyanStars, int amberStars){
             auto match = std::find_if(sculptures.begin(), sculptures.end(), 
             [&cyanStars, &amberStars](const ayatan_sculpture& sculpture)
@@ -115,6 +133,7 @@ namespace Sorting {
         };
         auto addIfNew = [&sculptures, findElement](int cyanStars, int amberStars){
             if(findElement(cyanStars, amberStars) == sculptures.end()){
+                logfile << "Added new vector element (stars: c, a): " << cyanStars + " " + amberStars << std::endl;
                 sculptures.push_back({cyanStars, amberStars});
             }
         };
@@ -127,12 +146,14 @@ namespace Sorting {
                     if(element->sell > value){
                         element->sell = value;
                         element->sell_trade = true;
+                        logfile << "Updated a vector element type sell (stars: c, a): " << cyanStars + " " + amberStars << std::endl;
                     }
                     break;
                 case tradeType::buy :
                     if(element->buy < value){
                         element->buy = value;
                         element->buy_trade = true;
+                        logfile << "Updated a vector element type buy (stars: c, a): " << cyanStars + " " + amberStars << std::endl;
                     }
                     break;
                 default:
@@ -140,6 +161,7 @@ namespace Sorting {
                 }
             }
         };
+       
         for(json order : orders["data"]){
             int cyan = order["cyanStars"];
             int amber = order["amberStars"];
@@ -152,6 +174,7 @@ namespace Sorting {
                 priceCompare(cyan, amber, tradeType::sell, order["platinum"]);
             }
         }
+
         int margin = std::numeric_limits<int>::min();
         std::optional<ayatan_sculpture> best = std::nullopt;
         for(ayatan_sculpture SC : sculptures){
@@ -160,26 +183,51 @@ namespace Sorting {
                 best = SC;
             }
         }
-        if(best.has_value() && margin > 10 && Frequency(itemType::Ayatan, best)) return best;
-        else return std::nullopt;
+        logfile << "resulting margin: " << margin << std::endl;
+        if(best.has_value()) logfile << "struct of the best sculpture (stars: c, a):" << best->cyanStars + " " + best->amberStars << std::endl;
+        else logfile << "best is empty" << std::endl;
+
+        if(best.has_value() && margin > 10 && Frequency(itemType::Ayatan, best)){
+            return best;
+        } 
+        else {
+            return std::nullopt;
+        } 
     }
-    void ValidTrade(std::string item, std::vector<std::string> tags){
+    void ValidTrade(std::string item, std::vector<std::string> tags, bool log){
         slug = item;
+        if(log){
+            logfile.open("out.log", std::ios::app);
+        }
         json orders = CURL_OP::GETjson("https://api.warframe.market/v2/orders/item/" + (std::string)slug, {"accept: application/json", "Language: en"});
         if(std::find(tags.begin(), tags.end(), "ayatan_sculpture") != tags.end()){
+            logfile << "==========AYATAN CHECK==========" << std::endl;
+            logfile << "slug: " << slug << std::endl;
+
             std::optional<ayatan_sculpture> result = AyatanMargin(orders);
-            if(result.has_value()) std::cout << result->buy << "AYATAN!!!!!!";
-            else std::cout << "not today amigo";
+            if(result.has_value()){
+                logfile << "AYATAN!!!!!!" << std::endl;
+                std::cout << result->buy << "AYATAN!!!!!!" << std::endl;
+            }
         }
-        else if(std::find(tags.begin(), tags.end(), "rank") != tags.end()){
+        else if(std::find(tags.begin(), tags.end(), "mod") != tags.end() && std::find(tags.begin(), tags.end(), "veiled_riven") == tags.end()){
+            logfile << "==========MOD CHECK==========" << std::endl;
+            logfile << "slug: " << slug << std::endl;
+
             std::optional<int> result = RankBasedMargin(orders);
-            if(result.has_value()) std::cout << *result << "MOD!!!!!!";
-            else std::cout << "not today amigo";
+            if(result.has_value()){
+                logfile << "MOD!!!!!!" << std::endl;
+                std::cout << *result << "MOD!!!!!!" << std::endl;
+            }
         }
         else{
-            if(BasicMargin(orders)) std::cout << "BASIC!!!!!!";
-            else std::cout << "not today amigo";
+            logfile << "==========BASIC CHECK==========" << std::endl;
+            logfile << "slug: " << slug << std::endl;
+            if(BasicMargin(orders)){
+                logfile << "BASIC!!!!!!" << std::endl;
+                std::cout << "BASIC!!!!!!" << std::endl;
+            } 
         }
-        
+        logfile.close();
     }
 }
