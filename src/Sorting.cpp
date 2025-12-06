@@ -55,7 +55,17 @@ namespace Sorting {
     std::optional<int> RankBasedMargin(json orders){
         std::unordered_map<int, rank> ranks;
         for(json curr: orders["data"]){
-            int key = curr["rank"];
+            int key;
+            try
+            {
+                key =  curr["rank"];
+            }
+            catch(const nlohmann::json::exception& e)
+            {
+                std::cout << e.what() << '\n';
+                return std::nullopt;
+            }
+            
             if(ranks.find(key) == ranks.end()){
                 ranks.insert({key, rank()});
             }
@@ -163,8 +173,21 @@ namespace Sorting {
         };
        
         for(json order : orders["data"]){
-            int cyan = order["cyanStars"];
-            int amber = order["amberStars"];
+            int cyan = 0;
+            int amber = 0;
+            try
+            {
+                cyan = order["cyanStars"];
+            }
+            catch(...)
+            {
+            }
+            try
+            {
+                amber = order["amberStars"];
+            }
+            catch(...){}
+            
             addIfNew(cyan, amber);
 
             if(order["user"]["status"] == "ingame" && order["type"] == "sell"){
@@ -197,6 +220,8 @@ namespace Sorting {
     void ValidTrade(std::string item, std::vector<std::string> tags, bool log){
         slug = item;
         if(log){
+            // logfile.open("out.log", std::ios::trunc);
+            // logfile.close();
             logfile.open("out.log", std::ios::app);
         }
         json orders = CURL_OP::GETjson("https://api.warframe.market/v2/orders/item/" + (std::string)slug, {"accept: application/json", "Language: en"});
