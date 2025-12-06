@@ -10,13 +10,18 @@ int main(int argc, char* argv[]) {
     std::cout << "runs" << std::endl;
     // CURL_OP::POSTjson("https://api.warframe.market/v2/order", argv[1]);    
     json items = CURL_OP::GETjson("https://api.warframe.market/v2/items", {"accept: application/json", "Language: en"});
-    while (true)
-    {
-        for(json item: items["data"]){
-            std::vector<std::string> tags = item["tags"];
-            // std::cout << item["slug"] << std::endl;
-            Sorting::ValidTrade(item["slug"], tags, false);
-        }
+    // while (true)
+    // {
+    //     for(json item: items["data"]){
+    //         std::vector<std::string> tags = item["tags"];
+    //         // std::cout << item["slug"] << std::endl;
+    //         Sorting::ValidTrade(item["slug"], tags, false);
+    //     }
+    // }
+    for(json item: items["data"]){
+        std::vector<std::string> tags = item["tags"];
+        // std::cout << item["slug"] << std::endl;
+        Sorting::ValidTrade(item["slug"], tags, true);
     }
     CURL_OP::disconnect();
     return 0;
