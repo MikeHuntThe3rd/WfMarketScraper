@@ -7,6 +7,7 @@
 #include <string>
 #include <chrono>
 #include <limits>
+#include <fstream>
 #include <optional>
 #include <algorithm>
 #include "json.hpp"
@@ -16,6 +17,7 @@ using json = nlohmann::json;
 namespace Sorting {
     //variables
     extern std::string slug;
+    extern std::ofstream logfile;
     enum class itemType {basic, mod, Ayatan};
     enum class tradeType {buy, sell};
     struct rank //stats for a mod at a certain level (only different mod ranks are saved)
@@ -32,7 +34,7 @@ namespace Sorting {
     };
     //functions
     bool Frequency(itemType type, std::optional<std::any> data = std::nullopt);
-    void ValidTrade(std::string item, std::vector<std::string> tags);
+    void ValidTrade(std::string item, std::vector<std::string> tags, bool log = false);
     std::optional<int> RankBasedMargin(json orders);
     std::optional<ayatan_sculpture> AyatanMargin(json orders);
     bool BasicMargin(json orders);

@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
         for(json item: items["data"]){
             std::vector<std::string> tags = item["tags"];
             // std::cout << item["slug"] << std::endl;
-            Sorting::ValidTrade(item["slug"], tags);
+            Sorting::ValidTrade(item["slug"], tags, false);
         }
     }
     CURL_OP::disconnect();
