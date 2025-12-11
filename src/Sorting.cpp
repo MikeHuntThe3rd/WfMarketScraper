@@ -130,7 +130,6 @@ namespace Sorting {
         }
     }
     std::optional<ayatan_sculpture> AyatanMargin(json orders){
-        bool buy_trade = false, sell_trade = false;
         std::vector<ayatan_sculpture> sculptures;
 
         auto findElement = [&sculptures](int cyanStars, int amberStars){
@@ -179,9 +178,7 @@ namespace Sorting {
             {
                 cyan = order["cyanStars"];
             }
-            catch(...)
-            {
-            }
+            catch(...){}
             try
             {
                 amber = order["amberStars"];

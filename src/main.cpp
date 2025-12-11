@@ -20,8 +20,7 @@ int main(int argc, char* argv[]) {
     // }
     for(json item: items["data"]){
         std::vector<std::string> tags = item["tags"];
-        // std::cout << item["slug"] << std::endl;
-        Sorting::ValidTrade(item["slug"], tags, true);
+        Sorting::ValidTrade(item["slug"], tags);
     }
     CURL_OP::disconnect();
     return 0;

@@ -1,37 +1,20 @@
 #pragma once
-#ifdef _WIN32
-    #define NOMINMAX
-#endif
 #include <iostream>
 #include <vector>
 #include <string>
 #include <chrono>
-#include <limits>
 #include <fstream>
 #include <optional>
-#include <algorithm>
 #include "json.hpp"
+#include "Types.hpp"
 #include "CurlReq.hpp"
 
 using json = nlohmann::json;
+using namespace Types;
 namespace Sorting {
     //variables
     extern std::string slug;
     extern std::ofstream logfile;
-    enum class itemType {basic, mod, Ayatan};
-    enum class tradeType {buy, sell};
-    struct rank //stats for a mod at a certain level (only different mod ranks are saved)
-    {
-        bool sell_trade = false, buy_trade = false;
-        int sell = std::numeric_limits<int>::max(), buy = std::numeric_limits<int>::min();
-    };
-    struct ayatan_sculpture //stats for an ayatan_sculpture (every iteration is saved)
-    {
-        int cyanStars, amberStars,
-        buy = std::numeric_limits<int>::min(),
-        sell = std::numeric_limits<int>::max();
-        bool sell_trade = false, buy_trade = false;
-    };
     //functions
     bool Frequency(itemType type, std::optional<std::any> data = std::nullopt);
     void ValidTrade(std::string item, std::vector<std::string> tags, bool log = false);
