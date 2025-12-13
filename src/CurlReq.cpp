@@ -1,6 +1,6 @@
 #include "CurlReq.hpp"
 
-namespace CURL_OP {
+namespace CurlReq {
 	CURL* curl = nullptr;
 	std::string response_string;
 	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
@@ -56,20 +56,12 @@ namespace CURL_OP {
 			}
 		}
 	}
-	void POSTjson(std::string https, std::string JWT, std::string body = ""){
+	void POSTjson(std::string https, std::string JWT, json body){
 		//body is a very specific kind of string: R"({}) make sure you format everything like this for it to work
 		wait();
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 		SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});
-		body = R"({
-			"itemId": "59eba86952f90ed715e1415a",
-			"type": "sell",
-			"platinum": 38,
-			"quantity": 1,
-			"visible": false,
-			"perTrade": 1
-		})";
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.dump().c_str());
 		CURLcode res = curl_easy_perform(curl);
 		if (res != CURLE_OK) {
 			std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << "\n";

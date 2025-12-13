@@ -23,9 +23,15 @@ namespace Types {
         sell = std::numeric_limits<int>::max();
         bool sell_trade = false, buy_trade = false;
     };
+    struct basic
+    {
+        int sell, buy;
+    };
+    
     struct trade_return
     {
         bool good_trade;
+        itemType type;
         std::optional<std::any> data = std::nullopt;
     };
 }

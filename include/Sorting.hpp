@@ -20,5 +20,5 @@ namespace Sorting {
     trade_return ValidTrade(std::string item, std::vector<std::string> tags, bool log = false);
     std::optional<rank> RankBasedMargin(json orders);
     std::optional<ayatan_sculpture> AyatanMargin(json orders);
-    bool BasicMargin(json orders);
+    std::optional<basic> BasicMargin(json orders);
 }

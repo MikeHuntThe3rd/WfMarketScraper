@@ -1,29 +1,25 @@
 #include "CurlReq.hpp"
 #include "Sorting.hpp"
+#include "OrderHandling.hpp"
 #include <fstream>
 // std::chrono::steady_clock::time_point last = std::chrono::steady_clock::now();
 // while(true){
 //     if(std::chrono::steady_clock::now() >= last + std::chrono::milliseconds(3000)) break;
 // }
 int main(int argc, char* argv[]) {
-    CURL_OP::setup();
+    CurlReq::setup();
     std::cout << "runs" << std::endl;
     std::ofstream del("out.log", std::ios::trunc);
     del.close();
     // CURL_OP::POSTjson("https://api.warframe.market/v2/order", argv[1]);    
-    json items = CURL_OP::GETjson("https://api.warframe.market/v2/items", {"accept: application/json", "Language: en"});
-    // while (true)
-    // {
-    //     for(json item: items["data"]){
-    //         std::vector<std::string> tags = item["tags"];
-    //         // std::cout << item["slug"] << std::endl;
-    //         Sorting::ValidTrade(item["slug"], tags, false);
-    //     }
-    // }
+    json items = CurlReq::GETjson("https://api.warframe.market/v2/items", {"accept: application/json", "Language: en"});
     for(json item: items["data"]){
-        std::vector<std::string> tags = item["tags"];
-        Sorting::ValidTrade(item["slug"], tags, true);
+        auto trade = Sorting::ValidTrade(item["slug"], item["tags"].get<std::vector<std::string>>(), true);
+        if(trade.good_trade){
+            std::string id = item["id"].get<std::string>();
+            OrderHandling::PostOrder(trade.type, id, argv[1], trade);
+        }
     }
-    CURL_OP::disconnect();
+    CurlReq::disconnect();
     return 0;
 }

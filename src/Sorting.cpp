@@ -3,7 +3,7 @@ namespace Sorting {
     std::string slug = "";
     std::ofstream logfile;
     bool Frequency(itemType type, std::optional<std::any> data){
-        json stats = CURL_OP::GETjson("https://api.warframe.market/v1/items/" + (std::string)slug  + "/statistics", {"accept: application/json", "Language: en"});
+        json stats = CurlReq::GETjson("https://api.warframe.market/v1/items/" + (std::string)slug  + "/statistics", {"accept: application/json", "Language: en"});
         int vol = 0;
         switch (type)
         {
@@ -110,7 +110,7 @@ namespace Sorting {
             return std::nullopt;
         }
     }
-    bool BasicMargin(json orders){
+    std::optional<basic> BasicMargin(json orders){
         int buy = std::numeric_limits<int>::min();
         int sell = std::numeric_limits<int>::max();
         bool buy_trade = false, sell_trade = false;
@@ -129,10 +129,10 @@ namespace Sorting {
         if((sell_trade && buy_trade) && sell - buy > 10 && Frequency(itemType::basic)){
             // std::cout << "sell:" << sell << std::endl;
             // std::cout << "buy:" << buy << std::endl;
-            return true;
+            return basic{sell, buy};
         }
         else{
-            return false;
+            return std::nullopt;
         }
     }
     std::optional<ayatan_sculpture> AyatanMargin(json orders){
@@ -226,7 +226,7 @@ namespace Sorting {
         if(log){
             logfile.open("out.log", std::ios::app);
         }
-        json orders = CURL_OP::GETjson("https://api.warframe.market/v2/orders/item/" + (std::string)slug, {"accept: application/json", "Language: en"});
+        json orders = CurlReq::GETjson("https://api.warframe.market/v2/orders/item/" + (std::string)slug, {"accept: application/json", "Language: en"});
         if(std::find(tags.begin(), tags.end(), "ayatan_sculpture") != tags.end()){
             logfile << "==========AYATAN CHECK==========" << std::endl;
             logfile << "slug: " << slug << std::endl;
@@ -236,7 +236,7 @@ namespace Sorting {
                 logfile << "AYATAN!!!!!!" << std::endl;
                 std::cout << "AYATAN!!!!!!" << std::endl;
 
-                __return = trade_return{true, result.value()};
+                __return = trade_return{true, itemType::Ayatan, result.value()};
             }
             else{
                 __return = {false};
@@ -251,18 +251,20 @@ namespace Sorting {
                 logfile << "MOD!!!!!!" << std::endl;
                 std::cout << "MOD!!!!!!" << std::endl;
 
-                __return = {true, result.value()};
+                __return = {true, itemType::mod, result.value()};
             }
             else __return = {false};
         }
         else{
             logfile << "==========BASIC CHECK==========" << std::endl;
             logfile << "slug: " << slug << std::endl;
-            if(BasicMargin(orders)){
+
+            auto result = BasicMargin(orders);
+            if(result.has_value()){
                 logfile << "BASIC!!!!!!" << std::endl;
                 std::cout << "BASIC!!!!!!" << std::endl;
                 
-                __return = {true, 1};
+                __return = {true, itemType::basic, result.value()};
             }
             else __return = {false};
         }

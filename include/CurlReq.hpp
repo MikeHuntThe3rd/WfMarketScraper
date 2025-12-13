@@ -9,7 +9,7 @@
 #include "json.hpp"
 
 using json = nlohmann::json;
-namespace CURL_OP {
+namespace CurlReq {
     //variables
     extern CURL* curl;
     extern std::string response_string;
@@ -22,5 +22,5 @@ namespace CURL_OP {
     void SETcurlData(std::string url, std::vector<std::string> headers);
     static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* data);
     json GETjson(std::string https, std::vector<std::string> headers = {});
-    void POSTjson(std::string https, std::string JWT);
+    void POSTjson(std::string https, std::string JWT, json body);
 }
