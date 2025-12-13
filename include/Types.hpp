@@ -27,11 +27,10 @@ namespace Types {
     {
         int sell, buy;
     };
-    
     struct trade_return
     {
         bool good_trade;
         itemType type;
-        std::optional<std::any> data = std::nullopt;
+        std::any data;
     };
 }

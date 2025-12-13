@@ -8,5 +8,5 @@ using namespace Types;
 using namespace CurlReq;
 using json = nlohmann::json;
 namespace OrderHandling {
-    void PostOrder(itemType type, std::string id, std::string JWT, std::optional<std::any> data);
+    void PostOrder(std::string id, std::string JWT, trade_return trade);
 }

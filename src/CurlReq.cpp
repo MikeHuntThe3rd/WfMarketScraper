@@ -70,6 +70,10 @@ namespace CurlReq {
 			json temp = response_string;
 			out << temp.dump(4);
 			out.close();
+			std::ofstream scnd("body.json");
+			temp = body;
+			scnd << temp.dump(4);
+			scnd.close();
 		}
 	}
 	void SETcurlData(std::string url, std::vector<std::string> headers){
