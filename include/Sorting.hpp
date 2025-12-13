@@ -17,8 +17,8 @@ namespace Sorting {
     extern std::ofstream logfile;
     //functions
     bool Frequency(itemType type, std::optional<std::any> data = std::nullopt);
-    void ValidTrade(std::string item, std::vector<std::string> tags, bool log = false);
-    std::optional<int> RankBasedMargin(json orders);
+    trade_return ValidTrade(std::string item, std::vector<std::string> tags, bool log = false);
+    std::optional<rank> RankBasedMargin(json orders);
     std::optional<ayatan_sculpture> AyatanMargin(json orders);
     bool BasicMargin(json orders);
 }

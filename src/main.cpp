@@ -8,6 +8,8 @@
 int main(int argc, char* argv[]) {
     CURL_OP::setup();
     std::cout << "runs" << std::endl;
+    std::ofstream del("out.log", std::ios::trunc);
+    del.close();
     // CURL_OP::POSTjson("https://api.warframe.market/v2/order", argv[1]);    
     json items = CURL_OP::GETjson("https://api.warframe.market/v2/items", {"accept: application/json", "Language: en"});
     // while (true)
@@ -20,7 +22,7 @@ int main(int argc, char* argv[]) {
     // }
     for(json item: items["data"]){
         std::vector<std::string> tags = item["tags"];
-        Sorting::ValidTrade(item["slug"], tags);
+        Sorting::ValidTrade(item["slug"], tags, true);
     }
     CURL_OP::disconnect();
     return 0;

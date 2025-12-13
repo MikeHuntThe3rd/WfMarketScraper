@@ -52,8 +52,20 @@ namespace Sorting {
             return false;
         }
     }
-    std::optional<int> RankBasedMargin(json orders){
-        std::unordered_map<int, rank> ranks;
+    std::optional<rank> RankBasedMargin(json orders){
+        std::vector<rank> ranks;
+        auto find_element = [&ranks](int level) -> rank& {
+            auto iterator = std::find_if(ranks.begin(), ranks.end(), [&level](rank& element){
+                return element.level == level;
+            });
+            if(iterator != ranks.end()){
+                return *iterator;
+            }
+            else{
+                ranks.emplace_back(rank{level});
+                return ranks.back();
+            }
+        };
         for(json curr: orders["data"]){
             int key;
             try
@@ -66,39 +78,33 @@ namespace Sorting {
                 return std::nullopt;
             }
             
-            if(ranks.find(key) == ranks.end()){
-                ranks.insert({key, rank()});
+            if(curr["user"]["status"] == "ingame" && curr["platinum"] < find_element(key).sell && curr["type"] == "sell"){
+                find_element(key).sell_trade = true;
+                find_element(key).sell = curr["platinum"];
             }
-            if(curr["platinum"] < ranks[key].sell && curr["user"]["status"] == "ingame" && curr["type"] == "sell"){
-                ranks[key].sell_trade = true;
-                ranks[key].sell = curr["platinum"];
-            }
-            if(curr["platinum"] > ranks[key].buy && curr["user"]["status"] == "ingame" && curr["type"] == "buy"){
-                ranks[key].buy_trade = true;
-                ranks[key].buy = curr["platinum"];
+            if(curr["user"]["status"] == "ingame" && curr["platinum"] > find_element(key).buy && curr["type"] == "buy"){
+                find_element(key).buy_trade = true;
+                find_element(key).buy = curr["platinum"];
             }
         }
         int margin = std::numeric_limits<int>::min();
-        int best_margin_key;
+        rank best;
         bool value_found = false;
         for(const auto& rank: ranks){
-            if((rank.second.buy_trade && rank.second.sell_trade) && margin < rank.second.sell - rank.second.buy){
-                margin = rank.second.sell - rank.second.buy;
-                best_margin_key = rank.first;
+            if((rank.buy_trade && rank.sell_trade) && rank.sell - rank.buy > margin){
+                margin = rank.sell - rank.buy;
+                best = rank;
                 value_found = true;
             }
         }
         if(value_found){
             logfile << "margin: " << margin << std::endl;
-            logfile << "rank: " << best_margin_key << std::endl;
+            logfile << "rank: " << best.level << std::endl;
         }
         else logfile << "no good mod trade found: " << std::endl;
         
-        if(value_found && margin > 10 && Frequency(itemType::mod , best_margin_key)){
-            //std::cout << "rank: " << best_margin_key << std::endl;
-            // std::cout << "sell:" << ranks[best_margin_key].sell << std::endl;
-            // std::cout << "buy:" << ranks[best_margin_key].buy << std::endl;
-            return best_margin_key;
+        if(value_found && margin > 10 && Frequency(itemType::mod , best.level)){
+            return best;
         }
         else{
             return std::nullopt;
@@ -214,11 +220,10 @@ namespace Sorting {
             return std::nullopt;
         } 
     }
-    void ValidTrade(std::string item, std::vector<std::string> tags, bool log){
+    trade_return ValidTrade(std::string item, std::vector<std::string> tags, bool log){
         slug = item;
+        trade_return __return;
         if(log){
-            // logfile.open("out.log", std::ios::trunc);
-            // logfile.close();
             logfile.open("out.log", std::ios::app);
         }
         json orders = CURL_OP::GETjson("https://api.warframe.market/v2/orders/item/" + (std::string)slug, {"accept: application/json", "Language: en"});
@@ -229,18 +234,26 @@ namespace Sorting {
             std::optional<ayatan_sculpture> result = AyatanMargin(orders);
             if(result.has_value()){
                 logfile << "AYATAN!!!!!!" << std::endl;
-                std::cout << result->buy << "AYATAN!!!!!!" << std::endl;
+                std::cout << "AYATAN!!!!!!" << std::endl;
+
+                __return = trade_return{true, result.value()};
+            }
+            else{
+                __return = {false};
             }
         }
         else if(std::find(tags.begin(), tags.end(), "mod") != tags.end() && std::find(tags.begin(), tags.end(), "veiled_riven") == tags.end()){
             logfile << "==========MOD CHECK==========" << std::endl;
             logfile << "slug: " << slug << std::endl;
 
-            std::optional<int> result = RankBasedMargin(orders);
+            std::optional<rank> result = RankBasedMargin(orders);
             if(result.has_value()){
                 logfile << "MOD!!!!!!" << std::endl;
-                std::cout << *result << "MOD!!!!!!" << std::endl;
+                std::cout << "MOD!!!!!!" << std::endl;
+
+                __return = {true, result.value()};
             }
+            else __return = {false};
         }
         else{
             logfile << "==========BASIC CHECK==========" << std::endl;
@@ -248,8 +261,12 @@ namespace Sorting {
             if(BasicMargin(orders)){
                 logfile << "BASIC!!!!!!" << std::endl;
                 std::cout << "BASIC!!!!!!" << std::endl;
-            } 
+                
+                __return = {true, 1};
+            }
+            else __return = {false};
         }
         logfile.close();
+        return __return;
     }
 }

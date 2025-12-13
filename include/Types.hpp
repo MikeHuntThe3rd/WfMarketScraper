@@ -3,6 +3,7 @@
     #define NOMINMAX
 #endif
 #include <limits>
+#include <optional>
 #include <algorithm>
 
 namespace Types {
@@ -12,8 +13,8 @@ namespace Types {
     //structs
     struct rank //stats for a mod at a certain level (only different mod ranks are saved)
     {
+        int level, sell = std::numeric_limits<int>::max(), buy = std::numeric_limits<int>::min();
         bool sell_trade = false, buy_trade = false;
-        int sell = std::numeric_limits<int>::max(), buy = std::numeric_limits<int>::min();
     };
     struct ayatan_sculpture //stats for an ayatan_sculpture (every iteration is saved)
     {
@@ -21,5 +22,10 @@ namespace Types {
         buy = std::numeric_limits<int>::min(),
         sell = std::numeric_limits<int>::max();
         bool sell_trade = false, buy_trade = false;
+    };
+    struct trade_return
+    {
+        bool good_trade;
+        std::optional<std::any> data = std::nullopt;
     };
 }
