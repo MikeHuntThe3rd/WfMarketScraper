@@ -36,11 +36,11 @@ namespace CurlReq {
 		if (response != CURLE_OK) {
 			std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(response) << std::endl;
 			response_string.clear();
-			return nullptr;
+			return json{};
 		}
 		else if(response_string.length() == 0){
 			std::cout << "no result" << std::endl;
-			return nullptr;
+			return json{};
 		}
 		else {
 			//std::cout << interval.count() << endl;
@@ -50,9 +50,7 @@ namespace CurlReq {
 				response_string.clear();
 				return data;
 			} catch (nlohmann::json::parse_error& err) {
-				//std::cout << response_string;
-				std::string error;
-				std::cin >> error;
+				std::cout << err.what();
 			}
 		}
 	}
@@ -70,6 +68,7 @@ namespace CurlReq {
 		SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
 		CURLcode res = curl_easy_perform(curl);
+		std::ofstream logfile("out.log", std::ios::app);
 		if (res != CURLE_OK) {
 			std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << "\n";
 		} else {
@@ -81,6 +80,7 @@ namespace CurlReq {
 			temp = body;
 			scnd << temp.dump(4);
 			scnd.close();
+			response_string.clear();
 		}
 	}
 	void SETcurlData(std::string url, std::vector<std::string> headers){
