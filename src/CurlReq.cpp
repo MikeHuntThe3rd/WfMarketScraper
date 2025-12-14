@@ -56,12 +56,19 @@ namespace CurlReq {
 			}
 		}
 	}
-	void POSTjson(std::string https, std::string JWT, json body){
+	void POSTjson(std::string https, std::string JWT, std::string body){
 		//body is a very specific kind of string: R"({}) make sure you format everything like this for it to work
 		wait();
+		// std::string bdy = R"({
+		// 	"itemId": "56783f24cbfa8f0432dd899c",
+		// 	"platinum": 80,
+		// 	"quantity": 1,
+		// 	"type": "buy",
+		// 	"visible": false
+        // })";
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 		SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.dump().c_str());
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
 		CURLcode res = curl_easy_perform(curl);
 		if (res != CURLE_OK) {
 			std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << "\n";

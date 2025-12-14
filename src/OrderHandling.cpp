@@ -6,27 +6,27 @@ namespace OrderHandling {
         j["type"] = "buy";
         j["quantity"] = 1;
         j["visible"] = false;
-        j["perTrade"] = 1;
+        // j["perTrade"] = 1;
         
         switch (trade.type)
         {
-        case itemType::basic : {
-            j["platinum"] = std::any_cast<basic>(trade.data).buy;
-            POSTjson("https://api.warframe.market/v2/order", JWT, j);
-            break;
-        }
-        case itemType::mod : {
-            j["platinum"] = std::any_cast<rank>(trade.data).buy;
-            j["rank"] = std::any_cast<rank>(trade.data).level;
-            POSTjson("https://api.warframe.market/v2/order", JWT, j);
-            break;
-        }
-        case itemType::Ayatan : {
-            // std::string bdy = R"({
-            //     "perTrade": 1
-            // })";
-            break;
-        }
+            case itemType::basic : {
+                j["platinum"] = std::any_cast<basic>(trade.data).buy;
+                POSTjson("https://api.warframe.market/v2/order", JWT, j.dump());
+                break;
+            }
+            case itemType::mod : {
+                j["platinum"] = std::any_cast<rank>(trade.data).buy;
+                j["rank"] = std::any_cast<rank>(trade.data).level;
+                POSTjson("https://api.warframe.market/v2/order", JWT, j.dump());
+                break;
+            }
+            case itemType::Ayatan : {
+                // std::string bdy = R"({
+                //     "perTrade": 1
+                // })";
+                break;
+            }
         }
     }
 }
