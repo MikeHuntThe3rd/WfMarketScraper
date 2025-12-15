@@ -76,10 +76,10 @@ namespace CurlReq {
 			json temp = response_string;
 			out << temp.dump(4);
 			out.close();
-			std::ofstream scnd("body.json");
-			temp = body;
-			scnd << temp.dump(4);
-			scnd.close();
+			// std::ofstream scnd("body.json");
+			// temp = body;
+			// scnd << temp.dump(4);
+			// scnd.close();
 			response_string.clear();
 		}
 	}
@@ -96,14 +96,16 @@ namespace CurlReq {
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
 		SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});
 		CURLcode response = curl_easy_perform(curl);
+		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, nullptr);
 		if(response != CURLE_OK){
 			std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(response) << "\n";
 		}
 		else{
-			std::ofstream out("delete_response.json");
-			json j = response_string;
-			out << j.dump(4);
-			out.close();
+			// std::ofstream out("delete_response.json");
+			// json j = response_string;
+			// out << j.dump(4);
+			// out.close();
+			response_string.clear();
 		}
 	}
 }
