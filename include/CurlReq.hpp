@@ -21,6 +21,8 @@ namespace CurlReq {
     void wait();
     void SETcurlData(std::string url, std::vector<std::string> headers);
     static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* data);
+    //methods
     json GETjson(std::string https, std::vector<std::string> headers = {});
     void POSTjson(std::string https, std::string JWT, std::string body);
+    void __DELETE(std::string https, std::string JWT);
 }
