@@ -119,10 +119,10 @@ namespace CurlReq {
 			std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(response) << "\n";
 		}
 		else{
-			// std::ofstream out("delete_response.json");
-			// json j = response_string;
-			// out << j.dump(4);
-			// out.close();
+			std::ofstream out("patch_response.json");
+			json j = response_string;
+			out << j.dump(4);
+			out.close();
 			response_string.clear();
 		}
 	}

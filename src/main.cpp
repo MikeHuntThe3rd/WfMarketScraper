@@ -9,13 +9,14 @@ int main(int argc, char* argv[]) {
 
     std::ofstream del("out.log", std::ios::trunc);
     del.close();
+    OrderHandling::UpdateOrder(argv[1], "6940730fe2f5699c2150da0d", itemType::mod, tradeType::buy, rank{1,1,1});
     OrderHandling::DeleteOrder(argv[1]);
     json items = CurlReq::GETjson("https://api.warframe.market/v2/items", {"accept: application/json", "Language: en"});
     for(json item: items["data"]){
         auto trade = Sorting::ValidTrade(item["slug"], item["tags"].get<std::vector<std::string>>(), true);
         if(trade.good_trade){
             std::string id = item["id"].get<std::string>();
-            OrderHandling::PostOrder(argv[1], id, tradeType::sell, trade);
+            OrderHandling::PostOrder(argv[1], id, tradeType::buy, trade);
         }
     }
     CurlReq::disconnect();

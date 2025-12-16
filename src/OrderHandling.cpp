@@ -11,7 +11,7 @@ namespace OrderHandling {
             }
         }
     }
-    void UpdateOrder(std::string JWT, std::string id, itemType type, std::optional<std::any> data){
+    void UpdateOrder(std::string JWT, std::string id, itemType type, tradeType trade_type, std::any data){
         json j;
         j["quantity"] = 1;
         j["visible"] = false;
@@ -19,19 +19,23 @@ namespace OrderHandling {
         switch (type)
         {
             case itemType::basic : {
-                j["platinum"] = std::any_cast<basic>(data).buy;
-                __PATCH("https://api.warframe.market/v2/order" + id, JWT, j.dump());
+                if(trade_type == tradeType::buy)j["platinum"] = std::any_cast<basic>(data).buy;
+                else j["platinum"] = std::any_cast<basic>(data).sell;
+
+                __PATCH("https://api.warframe.market/v2/order/" + id, JWT, j.dump());
                 break;
             }
             case itemType::mod : {
-                j["platinum"] = std::any_cast<rank>(data).buy;
+                if(trade_type == tradeType::buy) j["platinum"] = std::any_cast<rank>(data).buy;
+                else j["platinum"] = std::any_cast<rank>(data).sell;
                 j["rank"] = std::any_cast<rank>(data).level;
-                __PATCH("https://api.warframe.market/v2/order" + id, JWT, j.dump());
+
+                __PATCH("https://api.warframe.market/v2/order/" + id, JWT, j.dump());
                 break;
             }
             case itemType::Ayatan : {
                 j["perTrade"] = 1;
-                __PATCH("https://api.warframe.market/v2/order" + id, JWT, j.dump());
+                __PATCH("https://api.warframe.market/v2/order/" + id, JWT, j.dump());
                 break;
             }
         }
