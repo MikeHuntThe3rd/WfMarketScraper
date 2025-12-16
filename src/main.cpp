@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
         auto trade = Sorting::ValidTrade(item["slug"], item["tags"].get<std::vector<std::string>>(), true);
         if(trade.good_trade){
             std::string id = item["id"].get<std::string>();
-            OrderHandling::PostOrder(argv[1], id, trade);
+            OrderHandling::PostOrder(argv[1], id, tradeType::sell, trade);
         }
     }
     CurlReq::disconnect();

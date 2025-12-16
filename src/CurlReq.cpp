@@ -108,4 +108,22 @@ namespace CurlReq {
 			response_string.clear();
 		}
 	}
+	void __PATCH(std::string https, std::string JWT, std::string body){
+		wait();
+		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+		SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+		CURLcode response = curl_easy_perform(curl);
+		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, nullptr);
+		if(response != CURLE_OK){
+			std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(response) << "\n";
+		}
+		else{
+			// std::ofstream out("delete_response.json");
+			// json j = response_string;
+			// out << j.dump(4);
+			// out.close();
+			response_string.clear();
+		}
+	}
 }

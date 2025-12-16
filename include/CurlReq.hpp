@@ -5,8 +5,8 @@
 #include <chrono>
 #include <thread>
 #include <fstream>
-#include <curl/curl.h>
 #include "json.hpp"
+#include <curl/curl.h>
 
 using json = nlohmann::json;
 namespace CurlReq {
@@ -25,4 +25,5 @@ namespace CurlReq {
     json GETjson(std::string https, std::vector<std::string> headers = {});
     void POSTjson(std::string https, std::string JWT, std::string body);
     void __DELETE(std::string https, std::string JWT);
+    void __PATCH(std::string https, std::string JWT, std::string body);
 }
