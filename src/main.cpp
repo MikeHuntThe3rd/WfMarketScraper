@@ -1,22 +1,25 @@
+#include <atomic>
+#include <fstream>
+#include <iostream>
+#include <thread>
 #include "CurlReq.hpp"
 #include "Sorting.hpp"
 #include "OrderHandling.hpp"
-#include <fstream>
-#include <iostream>
 
 int main(int argc, char* argv[]) {
     CurlReq::setup();
     std::cout << "runs" << std::endl;
     if(argc == 1){
 	std::cout << "succesfull compalation, no parameter" << std::endl;
+	std::thread InGameTrades(OrderHandling::EElogChecking);
+	InGameTrades.join();
     }
     else {
-	std::cout << "succesfull compalation, parameter given" << std::endl;
 	std::ofstream del("out.log", std::ios::trunc);
 	del.close();
-	OrderHandling::UpdateOrder(argv[1], "6940730fe2f5699c2150da0d", itemType::mod, tradeType::buy, rank{1,1,1});
+	//OrderHandling::UpdateOrder(argv[1], "6940730fe2f5699c2150da0d", itemType::mod, tradeType::buy, rank{1,1,1});
 	OrderHandling::DeleteOrder(argv[1]);
-	json items = CurlReq::GETjson("https://api.warframe.market/v2/items", {"accept: application/json", "Language: en"});
+	json items = CurlReq::__GET("https://api.warframe.market/v2/items");
 	for(json item: items["data"]){
 	    auto trade = Sorting::ValidTrade(item["slug"], item["tags"].get<std::vector<std::string>>(), true);
 	    if(trade.good_trade){

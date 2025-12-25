@@ -2,11 +2,18 @@
 #ifdef _WIN32
     #define NOMINMAX
 #endif
+
+#include <any>
 #include <limits>
 #include <optional>
 #include <algorithm>
+#include <future>
+#include <atomic>
 
+using json = nlohmann::json;
 namespace Types {
+    //atomics
+    inline std::atomic<bool> LogLoop{true};
     //enums
     enum class itemType {basic, mod, Ayatan};
     enum class tradeType {buy, sell};
@@ -33,4 +40,10 @@ namespace Types {
         itemType type;
         std::any data;
     };
+    struct Task
+    {
+        std::function<json()> work;
+        std::promise<json> promise;
+    };
+    
 }
