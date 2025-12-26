@@ -4,18 +4,33 @@
 
 namespace OrderHandling {
     void EElogChecking(){
-	std::ifstream EE("../../out.txt");
-	std::string line;
-	while(Types::LogLoop){
-	    EE.clear();
-	    EE.seekg(0, std::ios::beg);
-	    while (std::getline(EE, line)) {
-            if(line.find("description=Are you sure you want to accept this trade? You are offering:") != std::string::npos){
-                std::cout << line << std::endl;
+        std::ifstream EE("../../out.txt");
+        std::string line;
+        while(Types::LogLoop){
+            //ifstream
+            EE.clear();
+            EE.seekg(0, std::ios::beg);
+            while (std::getline(EE, line)) {
+                bool CheckUnlocked = false;
+                std::string element = "";
+                std::stringstream space{line}, comma{line};
+                std::vector<std::string> spaceSeperated, commaSeperated;
+                while (std::getline( space, element, ' ' ))
+                {
+                    spaceSeperated.push_back(element);
+                }
+                while (std::getline( comma, element, ',' ))
+                {
+                    commaSeperated.push_back(element);
+                }
+                //line checking
+                if(line.find("description=Are you sure you want to accept this trade? You are offering:") != std::string::npos){
+                    CheckUnlocked = true;
+                    std::cout << *spaceSeperated.begin() << std::endl;
+                }
             }
-	    }
-        CurlReq::wait();
-    }	
+            CurlReq::wait();
+        }	
     }
     void DeleteOrder(std::string JWT, std::string id){
         if(id != ""){

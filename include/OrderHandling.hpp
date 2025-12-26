@@ -1,6 +1,7 @@
 #include <string>
 #include <sstream>
 #include <optional>
+#include <vector>
 #include <fstream>
 #include "json.hpp"
 #include "Types.hpp"
