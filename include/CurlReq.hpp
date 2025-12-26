@@ -45,4 +45,5 @@ namespace CurlReq {
             
             void QueueUnloading();
     };
+    inline Queuing q{};
 }

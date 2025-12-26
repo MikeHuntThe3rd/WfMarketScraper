@@ -3,7 +3,7 @@ namespace Sorting {
     std::string slug = "";
     std::ofstream logfile;
     bool Frequency(itemType type, std::optional<std::any> data){
-        json stats = CurlReq::__GET("https://api.warframe.market/v1/items/" + (std::string)slug  + "/statistics");
+        json stats = CurlReq::q.Add([]{return CurlReq::__GET("https://api.warframe.market/v1/items/" + (std::string)slug  + "/statistics");}).get();
         int vol = 0;
         switch (type)
         {
@@ -226,7 +226,7 @@ namespace Sorting {
         if(log){
             logfile.open("out.log", std::ios::app);
         }
-        json orders = CurlReq::__GET("https://api.warframe.market/v2/orders/item/" + (std::string)slug);
+        json orders = CurlReq::q.Add([]{ return CurlReq::__GET("https://api.warframe.market/v2/orders/item/" + (std::string)slug);}).get();
         if(std::find(tags.begin(), tags.end(), "ayatan_sculpture") != tags.end()){
             logfile << "==========AYATAN CHECK==========" << std::endl;
             logfile << "slug: " << slug << std::endl;

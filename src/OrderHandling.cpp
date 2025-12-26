@@ -19,12 +19,12 @@ namespace OrderHandling {
     }
     void DeleteOrder(std::string JWT, std::string id){
         if(id != ""){
-            CurlReq::__DELETE("https://api.warframe.market/v2/order/" + id, JWT);
+            CurlReq::q.Add([id, JWT]{return CurlReq::__DELETE("https://api.warframe.market/v2/order/" + id, JWT);});
         }
         else {
-            json orders = CurlReq::__GET("https://api.warframe.market/v2/orders/my", {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});
+            json orders = CurlReq::q.Add([JWT]{ return CurlReq::__GET("https://api.warframe.market/v2/orders/my", {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});}).get();
             for(json order: orders["data"]){
-                CurlReq::__DELETE("https://api.warframe.market/v2/order/" + order["id"].get<std::string>(), JWT);
+                CurlReq::q.Add([order, JWT]{ return CurlReq::__DELETE("https://api.warframe.market/v2/order/" + order["id"].get<std::string>(), JWT);});
             }
         }
     }
@@ -38,24 +38,21 @@ namespace OrderHandling {
             case itemType::basic : {
                 if(trade_type == tradeType::buy)j["platinum"] = std::any_cast<basic>(data).buy;
                 else j["platinum"] = std::any_cast<basic>(data).sell;
-
-                __PATCH("https://api.warframe.market/v2/order/" + id, JWT, j.dump());
                 break;
             }
             case itemType::mod : {
                 if(trade_type == tradeType::buy) j["platinum"] = std::any_cast<rank>(data).buy;
                 else j["platinum"] = std::any_cast<rank>(data).sell;
                 j["rank"] = std::any_cast<rank>(data).level;
-
-                __PATCH("https://api.warframe.market/v2/order/" + id, JWT, j.dump());
                 break;
             }
             case itemType::Ayatan : {
                 j["perTrade"] = 1;
-                __PATCH("https://api.warframe.market/v2/order/" + id, JWT, j.dump());
                 break;
             }
         }
+
+        CurlReq::q.Add([id, JWT, j]{ return __PATCH("https://api.warframe.market/v2/order/" + id, JWT, j.dump());});
     }
     void PostOrder(std::string JWT, std::string id, tradeType type, trade_return trade){
         json j;
@@ -71,14 +68,12 @@ namespace OrderHandling {
             case itemType::basic : {
                 if(type == tradeType::buy) j["platinum"] = std::any_cast<basic>(trade.data).buy;
                 else j["platinum"] = std::any_cast<basic>(trade.data).sell;
-                CurlReq::__POST("https://api.warframe.market/v2/order", JWT, j.dump());
                 break;
             }
             case itemType::mod : {
                 if(type == tradeType::buy) j["platinum"] = std::any_cast<rank>(trade.data).buy;
                 else j["platinum"] = std::any_cast<rank>(trade.data).sell;
                 j["rank"] = std::any_cast<rank>(trade.data).level;
-                CurlReq::__POST("https://api.warframe.market/v2/order", JWT, j.dump());
                 break;
             }
             case itemType::Ayatan : {
@@ -88,5 +83,6 @@ namespace OrderHandling {
                 break;
             }
         }
+        CurlReq::q.Add([JWT, j]{ return CurlReq::__POST("https://api.warframe.market/v2/order", JWT, j.dump());});
     }
 }

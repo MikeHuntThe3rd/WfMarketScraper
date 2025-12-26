@@ -34,9 +34,8 @@ namespace CurlReq {
 	}
 	//methods
 	json __GET(std::string https, std::vector<std::string> headers){
-		wait();
 		curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
-		SETcurlData(https, {"accept: application/json", "Language: en"});
+		SETcurlData(https, headers);
 		CURLcode response = curl_easy_perform(curl);
 		if (response != CURLE_OK) {
 			std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(response) << std::endl;
@@ -68,7 +67,6 @@ namespace CurlReq {
 		// 	"type": "buy",
 		// 	"visible": false
         // })";
-		wait();
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 		SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
@@ -83,10 +81,12 @@ namespace CurlReq {
 		}
 		else {
 			json result = json::parse(response_string);
-			std::ofstream out("return.json");
-			json temp = response_string;
-			out << temp.dump(4);
-			out.close();
+
+			// std::ofstream out("return.json");
+			// json temp = response_string;
+			// out << temp.dump(4);
+			// out.close();
+
 			// std::ofstream scnd("body.json");
 			// temp = body;
 			// scnd << temp.dump(4);
@@ -96,7 +96,6 @@ namespace CurlReq {
 		}
 	}
 	json __DELETE(std::string https, std::string JWT){
-		wait();
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
 		SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});
 		CURLcode response = curl_easy_perform(curl);
@@ -109,7 +108,7 @@ namespace CurlReq {
 			return json{};
 		}
 		else{
-			// std::ofstream out("delete_response.json");
+			std::ofstream out("delete_response.json");
 			// json j = response_string;
 			// out << j.dump(4);
 			// out.close();
@@ -119,7 +118,6 @@ namespace CurlReq {
 		}
 	}
 	json __PATCH(std::string https, std::string JWT, std::string body){
-		wait();
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
 		SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
@@ -134,10 +132,10 @@ namespace CurlReq {
 		}
 		else{
 			json result = json::parse(response_string);
-			std::ofstream out("patch_response.json");
-			json j = response_string;
-			out << j.dump(4);
-			out.close();
+			// std::ofstream out("patch_response.json");
+			// json j = response_string;
+			// out << j.dump(4);
+			// out.close();
 			response_string.clear();
 			return result;
 		}
@@ -147,14 +145,15 @@ namespace CurlReq {
 		worker = std::thread([this]{ QueueUnloading(); });
 	}	
 	void Queuing::QueueUnloading() {
+		Types::Task task;
 		while(true){
-			Types::Task task;
 			std::unique_lock<std::mutex> lock(thread_lock);
 			cv.wait(lock, [&]{return !tasks.empty();});
 			task = std::move(tasks.front());
 			tasks.pop();
 			json result = task.work();
 			task.promise.set_value(result);
+			CurlReq::wait();
 		}
 	}
 	std::future<json> Queuing::Add(std::function<json()> f){
