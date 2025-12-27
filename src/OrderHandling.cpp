@@ -6,12 +6,16 @@ namespace OrderHandling {
     void EElogChecking(){
         std::ifstream EE("../../out.txt");
         std::string line;
+        std::vector<std::string> soldItems, boughtItems;
         while(Types::LogLoop){
             //ifstream
             EE.clear();
             EE.seekg(0, std::ios::beg);
+            //variables
+            std::pair<bool, Types::tradeType> CheckUnlocked = {false, Types::tradeType::sell};
+            //file check by lines
             while (std::getline(EE, line)) {
-                bool CheckUnlocked = false;
+                //line checking
                 std::string element = "";
                 std::stringstream space{line}, comma{line};
                 std::vector<std::string> spaceSeperated, commaSeperated;
@@ -23,11 +27,30 @@ namespace OrderHandling {
                 {
                     commaSeperated.push_back(element);
                 }
-                //line checking
-                if(line.find("description=Are you sure you want to accept this trade? You are offering:") != std::string::npos){
-                    CheckUnlocked = true;
-                    std::cout << *spaceSeperated.begin() << std::endl;
+                //logic
+                if(line.find("and will receive from") != std::string::npos){
+                    CheckUnlocked.second = Types::tradeType::buy;
+                    goto trade_type_swap;
                 }
+
+                if(CheckUnlocked.first && line.length() > 0 && CheckUnlocked.second == Types::tradeType::sell) soldItems.push_back(line);
+                else if(CheckUnlocked.first && line.length() > 0 && CheckUnlocked.second == Types::tradeType::buy) boughtItems.push_back(line);
+
+                if(CheckUnlocked.first && line.length() > 0 && commaSeperated.size() > 1){
+                    std::cout << "sold:" << std::endl;
+                    for(auto curr: soldItems){
+                        std::cout << curr << std::endl;
+                    }
+                    std::cout << "bought:" << std::endl;
+                    for(auto curr: boughtItems){
+                        std::cout << curr << std::endl;
+                    }
+                    CheckUnlocked = {false, Types::tradeType::sell};
+                }
+                if(line.find("description=Are you sure you want to accept this trade? You are offering:") != std::string::npos){
+                    CheckUnlocked = {true, Types::tradeType::sell};
+                }
+                trade_type_swap:
             }
             CurlReq::wait();
         }	
