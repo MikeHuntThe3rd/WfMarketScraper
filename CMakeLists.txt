@@ -18,10 +18,11 @@ elseif(UNIX)
     set(CURL_LIBRARY ${CURL_LIBRARIES})
     set(CURL_INCLUDE_DIR ${CURL_INCLUDE_DIRS})
 endif()
+
 file(GLOB_RECURSE SRC CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
-#libcurl
 
 add_executable(main "${SRC}")
 
 target_include_directories(main PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/" ${CURL_INCLUDE_DIR})
 target_link_libraries(main PRIVATE ${CURL_LIBRARY})
+target_link_options(main PRIVATE -static-libstdc++ -static-libgcc)
