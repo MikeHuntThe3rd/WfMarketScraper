@@ -1,14 +1,15 @@
 #pragma once
+#include <string>
+#include <unordered_set>
 #ifdef _WIN32
     #define NOMINMAX
 #endif
 
 #include <any>
 #include <limits>
-#include <optional>
-#include <algorithm>
 #include <future>
 #include <atomic>
+#include "json.hpp"
 
 using json = nlohmann::json;
 namespace Types {
@@ -17,6 +18,9 @@ namespace Types {
     //enums
     enum class itemType {basic, mod, Ayatan};
     enum class tradeType {buy, sell};
+    enum class command {run, set};
+    //sets
+    inline std::unordered_set<std::string> RunModes = {"-w", "-d", "-l"};
     //structs
     struct rank //stats for a mod at a certain level (only different mod ranks are saved)
     {

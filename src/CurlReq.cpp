@@ -1,4 +1,5 @@
 #include "CurlReq.hpp"
+#include <mutex>
 
 namespace CurlReq {
 	void setup(){
@@ -166,5 +167,12 @@ namespace CurlReq {
 		}
 		cv.notify_one();
 		return future;
+	}
+	void Queuing::WaitUntilQueueEmpty(){
+	    while (true) {
+		std::unique_lock<std::mutex> lock(thread_lock);
+		cv.wait(lock, [&]{return tasks.empty();});
+		break;
+	    }
 	}
 }

@@ -37,6 +37,7 @@ namespace CurlReq {
         public:
             Queuing();
             std::future<json> Add(std::function<json()> f);
+	    void WaitUntilQueueEmpty();
         private: 
             std::queue<Types::Task> tasks;
             std::mutex thread_lock;
