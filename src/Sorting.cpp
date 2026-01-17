@@ -44,11 +44,9 @@ namespace Sorting {
         }
         
         if(vol > 96){
-            // std::cout << "volume" << vol << std::endl;
             return true;
         }
         else{
-            // std::cout << "volume" << vol << std::endl;
             return false;
         }
     }
@@ -214,7 +212,7 @@ namespace Sorting {
         else logfile << "best is empty" << std::endl;
 
         if(best.has_value() && margin > 10 && Frequency(itemType::Ayatan, best)){
-            return best;
+            return std::nullopt;
         } 
         else {
             return std::nullopt;

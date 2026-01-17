@@ -152,6 +152,7 @@ namespace CurlReq {
 			cv.wait(lock, [&]{return !tasks.empty();});
 			task = std::move(tasks.front());
 			tasks.pop();
+			cv.notify_all();
 			json result = task.work();
 			task.promise.set_value(result);
 			CurlReq::wait();
@@ -169,10 +170,7 @@ namespace CurlReq {
 		return future;
 	}
 	void Queuing::WaitUntilQueueEmpty(){
-	    while (true) {
-		std::unique_lock<std::mutex> lock(thread_lock);
-		cv.wait(lock, [&]{return tasks.empty();});
-		break;
-	    }
+	    std::unique_lock<std::mutex> lock(thread_lock);
+	    cv.wait(lock, [&]{return tasks.empty();});
 	}
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #ifdef _WIN32
     #define NOMINMAX
@@ -21,6 +22,11 @@ namespace Types {
     enum class command {run, set};
     //sets
     inline std::unordered_set<std::string> RunModes = {"-w", "-d", "-l"};
+    //maps
+    inline std::unordered_map<std::string, int> Settings ={
+	{"-m", 10},
+	{"-f", 96}
+    };
     //structs
     struct rank //stats for a mod at a certain level (only different mod ranks are saved)
     {
