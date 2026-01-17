@@ -1,4 +1,5 @@
 #include "Sorting.hpp"
+#include "Types.hpp"
 namespace Sorting {
     std::string slug = "";
     std::ofstream logfile;
@@ -12,7 +13,7 @@ namespace Sorting {
             for(json curr : stats["payload"]["statistics_closed"]["48hours"]){
                 vol += (int)curr["volume"];
             }
-            logfile << "volume min(96): " << vol << std::endl;
+            logfile << "volume min: " << vol << std::endl;
             break;
         case itemType::mod :
         {
@@ -23,7 +24,7 @@ namespace Sorting {
                     vol += (int)curr["volume"];
                 }
             }
-            logfile << "volume min(96): " << vol << std::endl;
+            logfile << "volume min: " << vol << std::endl;
             break;
         }
         case itemType::Ayatan :
@@ -36,14 +37,14 @@ namespace Sorting {
                     vol += (int)curr["volume"];
                 }
             }
-            logfile << "volume min(96): " << vol << std::endl;
+            logfile << "volume min: " << vol << std::endl;
             break;
         }
         default:
             break;
         }
         
-        if(vol > 96){
+        if(vol > Types::Settings["-f"]){
             return true;
         }
         else{
@@ -101,7 +102,7 @@ namespace Sorting {
         }
         else logfile << "no good mod trade found: " << std::endl;
         
-        if(value_found && margin > 10 && Frequency(itemType::mod , best.level)){
+        if(value_found && margin > Types::Settings["-m"] && Frequency(itemType::mod , best.level)){
             return best;
         }
         else{
@@ -124,7 +125,7 @@ namespace Sorting {
         }
         logfile << "found sell, buy: "<< sell_trade << buy_trade << std::endl;
         logfile << "margin: " << sell - buy << std::endl;
-        if((sell_trade && buy_trade) && sell - buy > 10 && Frequency(itemType::basic)){
+        if((sell_trade && buy_trade) && sell - buy > Types::Settings["-m"] && Frequency(itemType::basic)){
             // std::cout << "sell:" << sell << std::endl;
             // std::cout << "buy:" << buy << std::endl;
             return basic{sell, buy};
@@ -211,7 +212,7 @@ namespace Sorting {
         if(best.has_value()) logfile << "struct of the best sculpture (stars: c, a):" << best->cyanStars + " " + best->amberStars << std::endl;
         else logfile << "best is empty" << std::endl;
 
-        if(best.has_value() && margin > 10 && Frequency(itemType::Ayatan, best)){
+        if(best.has_value() && margin > Types::Settings["-f"] && Frequency(itemType::Ayatan, best)){
             return std::nullopt;
         } 
         else {

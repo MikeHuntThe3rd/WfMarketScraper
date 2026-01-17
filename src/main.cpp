@@ -46,6 +46,24 @@ void CreateSettings(){
     }
 }
 
+void SettingsSetup(){
+    using json = nlohmann::json;
+    CreateSettings();
+    std::ifstream in("settings.json");
+    json data = json::parse(in);
+    for(const auto & [key, value] : data.items()){
+	auto setting = Types::Settings.find(key);
+	if(setting != Types::Settings.end()){
+	    try {
+		setting->second = value;
+	    } 
+	    catch (std::exception e) {
+		std::cout << e.what() << std::endl;
+	    }
+	}
+    }
+}
+
 void WebLoop(std::string jwt){
     CurlReq::setup();
     std::ofstream del("out.log", std::ios::trunc);
@@ -86,6 +104,7 @@ void Set(std::vector<std::string> args){
 	    return;
 	}
 	if(setting != Types::Settings.end()){
+	    SettingsSetup();
 	    ChangeSettings(MapElement{setting->first, value});
 	    std::cout << "setting changed succesfully" << std::endl;
 	}
@@ -112,6 +131,7 @@ void Run(std::vector<std::string> args){
 	    return;
 	}
 	if(mode.value() == "-w" && args.size() > 3){
+	    SettingsSetup();
 	    WebLoop(args[3]);
 	}
 	else if (mode.value() == "-d" && args.size() > 3) {
