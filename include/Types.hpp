@@ -25,7 +25,8 @@ namespace Types {
     //maps
     inline std::unordered_map<std::string, int> Settings ={
 	{"-m", 10},
-	{"-f", 96}
+	{"-f", 96},
+	{"-l", 0}
     };
     //structs
     struct rank //stats for a mod at a certain level (only different mod ranks are saved)

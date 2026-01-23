@@ -72,7 +72,7 @@ void WebLoop(std::string jwt){
     json items = CurlReq::q.Add([]{ return CurlReq::__GET("https://api.warframe.market/v2/items");}).get();
     while (Types::LogLoop) {
 	for(json item: items["data"]){
-	    auto trade = Sorting::ValidTrade(item["slug"], item["tags"].get<std::vector<std::string>>(), true);
+	    auto trade = Sorting::ValidTrade(item["slug"], item["tags"].get<std::vector<std::string>>(), Types::Settings["-l"] != 0);
 	    if(trade.good_trade){
 		std::string id = item["id"].get<std::string>();
 		OrderHandling::PostOrder(jwt, id, tradeType::buy, trade);
@@ -139,6 +139,9 @@ void Run(std::vector<std::string> args){
 	    OrderHandling::DeleteOrder(args[3]);
 	    CurlReq::q.WaitUntilQueueEmpty();
 	    CurlReq::disconnect();
+	}
+	else if (mode.value() == "-l" && args.size() > 2) {
+	    OrderHandling::EElogChecking();
 	}
 	else {
 	    std::cout << "invalid command. \nNOTE:all web operation require your jwt token in the last argument" << std::endl;

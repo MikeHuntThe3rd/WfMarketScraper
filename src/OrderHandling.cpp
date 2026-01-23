@@ -1,8 +1,17 @@
 #include "OrderHandling.hpp"
 #include "CurlReq.hpp"
 #include "Types.hpp"
+#include <string>
+#include <vector>
 
 namespace OrderHandling {
+    std::vector<std::string> SeperateBy(std::stringstream & SS, std::string & line, char separator){
+	std::vector<std::string> result;
+	while (std::getline(SS, line, separator)) {
+	    result.push_back(line);
+	}
+	return result;
+    }
     void EElogChecking(){
         std::ifstream EE("../../out.txt");
         std::string line;
@@ -15,18 +24,14 @@ namespace OrderHandling {
             std::pair<bool, Types::tradeType> CheckUnlocked = {false, Types::tradeType::sell};
             //file check by lines
             while (std::getline(EE, line)) {
-                //line checking
+                //line data gathering
                 std::string element = "";
                 std::stringstream space{line}, comma{line};
                 std::vector<std::string> spaceSeperated, commaSeperated;
-                while (std::getline( space, element, ' ' ))
-                {
-                    spaceSeperated.push_back(element);
-                }
-                while (std::getline( comma, element, ',' ))
-                {
-                    commaSeperated.push_back(element);
-                }
+
+		spaceSeperated = OrderHandling::SeperateBy(space, element, ' ');
+		commaSeperated = OrderHandling::SeperateBy(comma, element, ',');
+
                 //logic
                 if(line.find("and will receive from") != std::string::npos){
                     CheckUnlocked.second = Types::tradeType::buy;
@@ -35,9 +40,15 @@ namespace OrderHandling {
 
                 if(CheckUnlocked.first && line.length() > 0 && CheckUnlocked.second == Types::tradeType::sell) soldItems.push_back(line);
                 else if(CheckUnlocked.first && line.length() > 0 && CheckUnlocked.second == Types::tradeType::buy) boughtItems.push_back(line);
-
-                if(CheckUnlocked.first && line.length() > 0 && commaSeperated.size() > 1){
-                    std::cout << "sold:" << std::endl;
+		//state checking
+                if(line.find("description=Are you sure you want to accept this trade? You are offering:") != std::string::npos){
+                    CheckUnlocked = {true, Types::tradeType::sell};
+		    soldItems.clear();
+		    boughtItems.clear();
+                }
+		if(line.find("description=The trade was successful!") != std::string::npos){
+		    //output
+		    std::cout << "sold:" << std::endl;
                     for(auto curr: soldItems){
                         std::cout << curr << std::endl;
                     }
@@ -45,16 +56,18 @@ namespace OrderHandling {
                     for(auto curr: boughtItems){
                         std::cout << curr << std::endl;
                     }
+
+		    //data resetting
                     CheckUnlocked = {false, Types::tradeType::sell};
-                }
-                if(line.find("description=Are you sure you want to accept this trade? You are offering:") != std::string::npos){
-                    CheckUnlocked = {true, Types::tradeType::sell};
+		    soldItems.clear();
+		    boughtItems.clear();
                 }
                 trade_type_swap:
             }
             CurlReq::wait();
         }	
     }
+
     void DeleteOrder(std::string JWT, std::string id){
         if(id != ""){
             CurlReq::q.Add([id, JWT]{return CurlReq::__DELETE("https://api.warframe.market/v2/order/" + id, JWT);});
