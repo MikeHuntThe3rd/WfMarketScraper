@@ -17,7 +17,7 @@ namespace Types {
     //atomics
     inline std::atomic<bool> LogLoop{true};
     //enums
-    enum class itemType {basic, mod, Ayatan};
+    enum class itemType {basic, mod, Ayatan, platinum};
     enum class tradeType {buy, sell};
     enum class command {run, set};
     //sets
@@ -50,6 +50,13 @@ namespace Types {
         bool good_trade;
         itemType type;
         std::any data;
+    };
+    struct local_trade 
+    {
+	tradeType Ttype;
+	itemType Itype;
+	std::string slug;
+	int amount;
     };
     struct Task
     {

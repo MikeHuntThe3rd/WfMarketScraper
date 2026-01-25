@@ -12,6 +12,11 @@ namespace OrderHandling {
 	}
 	return result;
     }
+    
+    local_trade ResultConversion(std::string item, tradeType Ttype){
+	return local_trade{tradeType::buy, itemType::basic, "lol", 1};
+    }
+
     void EElogChecking(){
         std::ifstream EE("../../out.txt");
         std::string line;
@@ -38,16 +43,32 @@ namespace OrderHandling {
                     goto trade_type_swap;
                 }
 
+		if(commaSeperated.size() > 1 && CheckUnlocked.first){
+		    CheckUnlocked.first = false;
+		    boughtItems.push_back(*commaSeperated.begin());
+		}
+
                 if(CheckUnlocked.first && line.length() > 0 && CheckUnlocked.second == Types::tradeType::sell) soldItems.push_back(line);
                 else if(CheckUnlocked.first && line.length() > 0 && CheckUnlocked.second == Types::tradeType::buy) boughtItems.push_back(line);
+
 		//state checking
                 if(line.find("description=Are you sure you want to accept this trade? You are offering:") != std::string::npos){
                     CheckUnlocked = {true, Types::tradeType::sell};
 		    soldItems.clear();
 		    boughtItems.clear();
                 }
+
+		//output
 		if(line.find("description=The trade was successful!") != std::string::npos){
-		    //output
+		    std::vector<local_trade> Trades;
+		    
+		    for(auto const& curr : soldItems){
+			Trades.push_back(ResultConversion(curr, tradeType::sell));
+		    }
+		    for(auto const& curr : boughtItems){
+			Trades.push_back(ResultConversion(curr, tradeType::buy));
+		    }
+
 		    std::cout << "sold:" << std::endl;
                     for(auto curr: soldItems){
                         std::cout << curr << std::endl;
@@ -108,8 +129,7 @@ namespace OrderHandling {
     void PostOrder(std::string JWT, std::string id, tradeType type, trade_return trade){
         json j;
         j["itemId"] = id;
-        if(type == tradeType::buy) j["type"] = "buy";
-        else j["type"] = "sell";
+	j["type"] = (type == tradeType::buy) ? "buy" : "sell";
         j["quantity"] = 1;
         j["visible"] = false;
         // j["perTrade"] = 1;
