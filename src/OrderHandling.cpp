@@ -1,6 +1,7 @@
 #include "OrderHandling.hpp"
 #include "CurlReq.hpp"
 #include "Types.hpp"
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -13,14 +14,14 @@ namespace OrderHandling {
 	return result;
     }
     
-    local_trade ResultConversion(std::string item, tradeType Ttype){
+    local_trade ResultConversion(std::vector<std::string> item, tradeType Ttype){
 	return local_trade{tradeType::buy, itemType::basic, "lol", 1};
     }
 
     void EElogChecking(){
         std::ifstream EE("../../out.txt");
         std::string line;
-        std::vector<std::string> soldItems, boughtItems;
+        std::vector<std::vector<std::string>> soldItems, boughtItems;
         while(Types::LogLoop){
             //ifstream
             EE.clear();
@@ -45,11 +46,16 @@ namespace OrderHandling {
 
 		if(commaSeperated.size() > 1 && CheckUnlocked.first){
 		    CheckUnlocked.first = false;
-		    boughtItems.push_back(*commaSeperated.begin());
+		    std::stringstream ss{*commaSeperated.begin()};
+		    std::string ln = "";
+		    //OrderHandling::SeperateBy(ss, ln, ' ')
+		    boughtItems.push_back(OrderHandling::SeperateBy(ss, ln, ' '));
 		}
 
-                if(CheckUnlocked.first && line.length() > 0 && CheckUnlocked.second == Types::tradeType::sell) soldItems.push_back(line);
-                else if(CheckUnlocked.first && line.length() > 0 && CheckUnlocked.second == Types::tradeType::buy) boughtItems.push_back(line);
+                if(CheckUnlocked.first && line.length() > 0 && CheckUnlocked.second == Types::tradeType::sell)
+		    soldItems.push_back(spaceSeperated);
+                else if(CheckUnlocked.first && line.length() > 0 && CheckUnlocked.second == Types::tradeType::buy)
+		    boughtItems.push_back(spaceSeperated);
 
 		//state checking
                 if(line.find("description=Are you sure you want to accept this trade? You are offering:") != std::string::npos){
@@ -71,11 +77,11 @@ namespace OrderHandling {
 
 		    std::cout << "sold:" << std::endl;
                     for(auto curr: soldItems){
-                        std::cout << curr << std::endl;
+                        std::cout << *curr.begin() << std::endl;
                     }
                     std::cout << "bought:" << std::endl;
                     for(auto curr: boughtItems){
-                        std::cout << curr << std::endl;
+                        std::cout << *curr.begin() << std::endl;
                     }
 
 		    //data resetting
