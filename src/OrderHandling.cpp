@@ -13,9 +13,20 @@ namespace OrderHandling {
 	}
 	return result;
     }
+
+    std::string Implode(std::vector<std::string> array, char seperator) {
+	std::string result = "";
+	for(int i = 0; i < array.size(); i++){
+	    const char * temp = &seperator;
+	    if(i + 1 == array.size() -1) result += array[i];
+	    else result += array[i] + std::string(temp);
+	}
+	return result;
+    }
     
     local_trade ResultConversion(std::vector<std::string> item, tradeType Ttype){
-	return local_trade{tradeType::buy, itemType::basic, "lol", 1};
+
+	return local_trade{tradeType::buy, itemType::basic, "lol", "asd", 1};
     }
 
     void EElogChecking(){
@@ -48,7 +59,7 @@ namespace OrderHandling {
 		    CheckUnlocked.first = false;
 		    std::stringstream ss{*commaSeperated.begin()};
 		    std::string ln = "";
-		    //OrderHandling::SeperateBy(ss, ln, ' ')
+
 		    boughtItems.push_back(OrderHandling::SeperateBy(ss, ln, ' '));
 		}
 
@@ -76,14 +87,13 @@ namespace OrderHandling {
 		    }
 
 		    std::cout << "sold:" << std::endl;
-                    for(auto curr: soldItems){
-                        std::cout << *curr.begin() << std::endl;
+                    for(const std::vector<std::string> & curr: soldItems){
+                        std::cout << Implode(curr, ' ') << std::endl;
                     }
                     std::cout << "bought:" << std::endl;
-                    for(auto curr: boughtItems){
-                        std::cout << *curr.begin() << std::endl;
+                    for(const std::vector<std::string> & curr: boughtItems){
+                        std::cout << Implode(curr, ' ') << std::endl;
                     }
-
 		    //data resetting
                     CheckUnlocked = {false, Types::tradeType::sell};
 		    soldItems.clear();

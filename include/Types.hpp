@@ -14,6 +14,8 @@
 
 using json = nlohmann::json;
 namespace Types {
+    //global generics
+    inline json items;
     //atomics
     inline std::atomic<bool> LogLoop{true};
     //enums
@@ -55,7 +57,7 @@ namespace Types {
     {
 	tradeType Ttype;
 	itemType Itype;
-	std::string slug;
+	std::string slug, id;
 	int amount;
     };
     struct Task

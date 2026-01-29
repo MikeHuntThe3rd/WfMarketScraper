@@ -11,7 +11,6 @@
 #include "Sorting.hpp"
 #include "OrderHandling.hpp"
 #include "Types.hpp"
-#include "optionparser.h"
 
 struct MapElement {
     std::string key;
@@ -69,7 +68,7 @@ void WebLoop(std::string jwt){
     std::ofstream del("out.log", std::ios::trunc);
     del.close();
     OrderHandling::DeleteOrder(jwt);
-    json items = CurlReq::q.Add([]{ return CurlReq::__GET("https://api.warframe.market/v2/items");}).get();
+    items = CurlReq::q.Add([]{ return CurlReq::__GET("https://api.warframe.market/v2/items");}).get();
     while (Types::LogLoop) {
 	for(json item: items["data"]){
 	    auto trade = Sorting::ValidTrade(item["slug"], item["tags"].get<std::vector<std::string>>(), Types::Settings["-l"] != 0);
@@ -125,42 +124,47 @@ void Run(std::vector<std::string> args){
 	return;
     }
     std::optional<std::string> mode = (args.size() >= 3) ? std::optional<std::string>{(std::string)args[2]} : std::nullopt;
+    auto setting = Types::Settings.find(mode.value());
     if(mode.has_value()){
 	if(Types::RunModes.find(mode.value()) == Types::RunModes.end()){
 	    std::cout << "mode not recognized" << std::endl;
 	    return;
 	}
-	if(mode.value() == "-w" && args.size() > 3){
+	if(args.size() != 4){
+	    std::cout << "invalid command. \nNOTE:all web operation require your jwt token in the last argument" << std::endl;
+	    return;
+	}
+
+	if(mode.value() == "-w"){
 	    SettingsSetup();
 	    WebLoop(args[3]);
 	}
-	else if (mode.value() == "-d" && args.size() > 3) {
+	else if (mode.value() == "-d") {
 	    CurlReq::setup();
 	    OrderHandling::DeleteOrder(args[3]);
 	    CurlReq::q.WaitUntilQueueEmpty();
 	    CurlReq::disconnect();
 	}
-	else if (mode.value() == "-l" && args.size() > 2) {
+	else if (mode.value() == "-l") {
+	    CurlReq::setup();
+	    items = CurlReq::q.Add([]{ return CurlReq::__GET("https://api.warframe.market/v2/items");}).get();
 	    OrderHandling::EElogChecking();
-	}
-	else {
-	    std::cout << "invalid command. \nNOTE:all web operation require your jwt token in the last argument" << std::endl;
+	    CurlReq::disconnect();
 	}
     }
-    else {
-	if (args.size() < 3) {
-	    std::cout << "missing jwt token" << std::endl;
-	    return;
-	}
+    else if(setting == Types::Settings.end()) {
     	std::thread InGameTrades(OrderHandling::EElogChecking);
 	WebLoop(args[2]);
 	InGameTrades.join();
     }
+    else {
+	std::cout << "invalid command. \nNOTE:all web operation require your jwt token in the last argument" << std::endl;
+    }
 }
 
 void CommandDispatch(std::vector<std::string> args){
-    if(args.size() == 1){
-	std::cout << "no command given" << std::endl;
+    if(args.size() <= 2){
+	std::cout << "too few arguments" << std::endl;
 	return;
     }
     if((std::string)args[1] == "run"){

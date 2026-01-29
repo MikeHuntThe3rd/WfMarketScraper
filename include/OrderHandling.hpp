@@ -17,4 +17,5 @@ namespace OrderHandling {
     std::vector<std::string> SeperateBy(std::stringstream & SS, std::string & line, char separator); 
     void EElogChecking();
     local_trade ResultConversion(std::vector<std::string> item, tradeType Ttype);
+    std::string Implode(std::vector<std::string> array, char seperator);
 }
