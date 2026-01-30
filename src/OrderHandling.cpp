@@ -1,6 +1,9 @@
 #include "OrderHandling.hpp"
 #include "CurlReq.hpp"
 #include "Types.hpp"
+#include <algorithm>
+#include <cctype>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -18,15 +21,32 @@ namespace OrderHandling {
 	std::string result = "";
 	for(int i = 0; i < array.size(); i++){
 	    const char * temp = &seperator;
-	    if(i + 1 == array.size() -1) result += array[i];
+	    if(i + 1 == array.size()) result += array[i];
 	    else result += array[i] + std::string(temp);
 	}
 	return result;
     }
+
+    void LowerCase(std::string & word) {
+	std::transform(word.begin(), word.end(), word.begin(),
+	[](unsigned char ch){ return std::tolower(ch); });
+    }
     
     local_trade ResultConversion(std::vector<std::string> item, tradeType Ttype){
-
-	return local_trade{tradeType::buy, itemType::basic, "lol", "asd", 1};
+	std::vector<std::string> name;
+	std::vector<std::string> data;
+	for(int i = 0; i < item.size(); i++){
+	    if(item[i] != "x" && item[i].find("(") == std::string::npos){
+		LowerCase(item[i]);
+		name.push_back(item[i]);
+	    }
+	    else {
+		data.insert(data.end(), item.begin() + i, item.end());
+		break;
+	    }
+	}
+	std::cout << data.size() << std::endl;
+	return local_trade{ Ttype, itemType::basic, Implode(name, '_'), "asd", 1};
     }
 
     void EElogChecking(){
@@ -86,14 +106,9 @@ namespace OrderHandling {
 			Trades.push_back(ResultConversion(curr, tradeType::buy));
 		    }
 
-		    std::cout << "sold:" << std::endl;
-                    for(const std::vector<std::string> & curr: soldItems){
-                        std::cout << Implode(curr, ' ') << std::endl;
-                    }
-                    std::cout << "bought:" << std::endl;
-                    for(const std::vector<std::string> & curr: boughtItems){
-                        std::cout << Implode(curr, ' ') << std::endl;
-                    }
+		    for(const auto & curr : Trades) {
+			std::cout << curr.slug << std::endl;
+		    }
 		    //data resetting
                     CheckUnlocked = {false, Types::tradeType::sell};
 		    soldItems.clear();

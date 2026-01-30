@@ -1,3 +1,4 @@
+#include <cstring>
 #include <string>
 #include <sstream>
 #include <optional>
@@ -18,4 +19,5 @@ namespace OrderHandling {
     void EElogChecking();
     local_trade ResultConversion(std::vector<std::string> item, tradeType Ttype);
     std::string Implode(std::vector<std::string> array, char seperator);
+    void LowerCase(std::string & word);
 }
