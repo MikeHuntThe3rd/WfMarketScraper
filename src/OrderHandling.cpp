@@ -20,11 +20,37 @@ namespace OrderHandling {
     std::string Implode(std::vector<std::string> array, char seperator) {
 	std::string result = "";
 	for(int i = 0; i < array.size(); i++){
-	    const char * temp = &seperator;
 	    if(i + 1 == array.size()) result += array[i];
-	    else result += array[i] + std::string(temp);
+	    else result += array[i] + seperator;
 	}
 	return result;
+    }
+
+    Types::itemType GetITypeFromSlug(std::string slug) {
+	for(const auto & curr : items["data"]){
+	    if(curr["slug"] == slug){
+		std::vector<std::string> tags = curr["tags"];
+
+		if(std::find(tags.begin(), tags.end(), "mod") != tags.end() &&
+		std::find(tags.begin(), tags.end(), "veiled_riven") == tags.end())
+		{
+		    return Types::itemType::mod;
+		}
+		else 
+		{
+		    return Types::itemType::basic;
+		}
+	    }
+	}
+	return Types::itemType::Ayatan;
+    }
+
+    std::string GetIdFromSlug(std::string slug) {
+	for(const json & curr : items["data"]) {
+	    if(curr["slug"] == slug) return curr["id"];
+	}
+	std::cout << "clouldnt find id for: " << "|" << slug << "|" << std::endl;
+	return "0";
     }
 
     void LowerCase(std::string & word) {
@@ -33,9 +59,15 @@ namespace OrderHandling {
     }
     
     local_trade ResultConversion(std::vector<std::string> item, tradeType Ttype){
+	Types::local_trade result = Types::local_trade{Ttype, Types::itemType::basic};
 	std::vector<std::string> name;
 	std::vector<std::string> data;
 	for(int i = 0; i < item.size(); i++){
+	    if(item[i] == "Platinum") {
+		result = Types::local_trade{ Ttype, itemType::platinum, "plat"};
+		data.insert(data.end(), item.begin() + i, item.end());
+		break;
+	    }
 	    if(item[i] != "x" && item[i].find("(") == std::string::npos){
 		LowerCase(item[i]);
 		name.push_back(item[i]);
@@ -45,8 +77,23 @@ namespace OrderHandling {
 		break;
 	    }
 	}
-	std::cout << data.size() << std::endl;
-	return local_trade{ Ttype, itemType::basic, Implode(name, '_'), "asd", 1};
+
+	for(int i = 0; i < data.size(); i++) {
+	    if(data[i] == "x"){
+		result.amount = std::stoi(data[i + 1]);
+		break;
+	    }
+	    if(data[i] == "RANK") {
+		result.level = std::stoi(data[i + 1]);
+		break;
+	    } 
+	}
+	if(result.Itype != itemType::platinum){
+	    result.slug = Implode(name, '_');
+	    result.id = GetIdFromSlug(result.slug);
+	    result.Itype = GetITypeFromSlug(result.slug);
+	} 
+	return result;
     }
 
     void EElogChecking(){

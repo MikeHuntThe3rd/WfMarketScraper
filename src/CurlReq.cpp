@@ -1,4 +1,5 @@
 #include "CurlReq.hpp"
+#include <iostream>
 #include <mutex>
 
 namespace CurlReq {
@@ -39,7 +40,7 @@ namespace CurlReq {
 		SETcurlData(https, headers);
 		CURLcode response = curl_easy_perform(curl);
 		if (response != CURLE_OK) {
-			std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(response) << std::endl;
+			std::cerr << "GET failed: " << curl_easy_strerror(response) << std::endl;
 			response_string.clear();
 			return json{};
 		}
@@ -55,7 +56,7 @@ namespace CurlReq {
 				response_string.clear();
 				return data;
 			} catch (nlohmann::json::parse_error& err) {
-				std::cout << err.what();
+			    std::cout << err.what();
 			}
 		}
 	}
@@ -74,7 +75,7 @@ namespace CurlReq {
 		CURLcode res = curl_easy_perform(curl);
 		std::ofstream logfile("out.log", std::ios::app);
 		if (res != CURLE_OK) {
-			std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << "\n";
+			std::cerr << "POST failed: " << curl_easy_strerror(res) << "\n";
 			return json{};
 		}
 		else if(response_string.length() == 0){
@@ -102,7 +103,7 @@ namespace CurlReq {
 		CURLcode response = curl_easy_perform(curl);
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, nullptr);
 		if(response != CURLE_OK){
-			std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(response) << "\n";
+			std::cerr << "DELETE failed: " << curl_easy_strerror(response) << "\n";
 			return json{};
 		}
 		else if(response_string.length() == 0){
@@ -125,7 +126,7 @@ namespace CurlReq {
 		CURLcode response = curl_easy_perform(curl);
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, nullptr);
 		if(response != CURLE_OK){
-			std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(response) << "\n";
+			std::cerr << "PATCH failed: " << curl_easy_strerror(response) << "\n";
 			return json{};
 		}
 		else if(response_string.length() == 0){

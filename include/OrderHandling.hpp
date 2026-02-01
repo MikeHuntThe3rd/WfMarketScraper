@@ -19,5 +19,7 @@ namespace OrderHandling {
     void EElogChecking();
     local_trade ResultConversion(std::vector<std::string> item, tradeType Ttype);
     std::string Implode(std::vector<std::string> array, char seperator);
+    std::string GetIdFromSlug(std::string slug);
+    Types::itemType GetITypeFromSlug(std::string slug);
     void LowerCase(std::string & word);
 }

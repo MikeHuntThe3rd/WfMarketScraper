@@ -57,8 +57,8 @@ namespace Types {
     {
 	tradeType Ttype;
 	itemType Itype;
-	std::string slug, id;
-	int amount;
+	std::string slug = "empty slug", id = "empty id";
+	int amount = 1, level = 0;
     };
     struct Task
     {

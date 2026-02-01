@@ -71,7 +71,7 @@ void WebLoop(std::string jwt){
     items = CurlReq::q.Add([]{ return CurlReq::__GET("https://api.warframe.market/v2/items");}).get();
     while (Types::LogLoop) {
 	for(json item: items["data"]){
-	    auto trade = Sorting::ValidTrade(item["slug"], item["tags"].get<std::vector<std::string>>(), Types::Settings["-l"] != 0);
+	    auto trade = Sorting::ValidTrade(item["slug"], item["tags"], Types::Settings["-l"] != 0);
 	    if(trade.good_trade){
 		std::string id = item["id"].get<std::string>();
 		OrderHandling::PostOrder(jwt, id, tradeType::buy, trade);
