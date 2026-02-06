@@ -3,6 +3,7 @@
 #include "Types.hpp"
 #include <algorithm>
 #include <cctype>
+#include <ios>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -96,14 +97,44 @@ namespace OrderHandling {
 	return result;
     }
 
+    void HandleTrades(std::vector<local_trade> Trades, std::string JWT){
+json orders = CurlReq::q.Add([JWT]{ return CurlReq::__GET("https://api.warframe.market/v2/orders/my", {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});}).get();
+	for(local_trade & trade : Trades){
+	    switch (trade.Ttype) {
+		case  Types::tradeType::sell:
+		    HandleSell(trade, orders);
+		    break;
+		case  Types::tradeType::buy:
+		    HandleBuy(trade, orders);
+		    break;
+	    }
+	}
+    }
+
+    void HandleSell(local_trade & trade, json & orders){
+	for(const auto & order : orders){
+	    if(order["id"] == trade.id){
+	    }
+	}
+    }
+
+    void HandleBuy(local_trade & trade, json & orders){
+	for(const auto & order : orders){
+	    if(order["id"] == trade.id){
+		//exec
+	    }
+	}
+    }
+
     void EElogChecking(){
         std::ifstream EE("../../out.txt");
+	EE.seekg(0, std::ios::end);
         std::string line;
         std::vector<std::vector<std::string>> soldItems, boughtItems;
         while(Types::LogLoop){
             //ifstream
             EE.clear();
-            EE.seekg(0, std::ios::beg);
+            EE.seekg(0, std::ios::cur);
             //variables
             std::pair<bool, Types::tradeType> CheckUnlocked = {false, Types::tradeType::sell};
             //file check by lines
