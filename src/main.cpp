@@ -10,7 +10,7 @@
 #include "CurlReq.hpp"
 #include "Sorting.hpp"
 #include "OrderHandling.hpp"
-#include "Types.hpp"
+#include "VARS.hpp"
 
 struct MapElement {
     std::string key;
@@ -24,11 +24,11 @@ std::vector<std::string> ParseArgv(int argc, char* argv[]){
 
 void ChangeSettings(std::optional<MapElement> change = std::nullopt){
     //set change if given
-    if(change.has_value()) Types::Settings[change->key] = change->value;
+    if(change.has_value()) VARS::Settings[change->key] = change->value;
     //remake the entire json with the settings unordered map as a template
     using json = nlohmann::json;
     json def;
-    for(auto element : Types::Settings){
+    for(auto element : VARS::Settings){
 	def[element.first] = element.second;
     }
     std::ofstream DefSettings("settings.json");
@@ -51,8 +51,8 @@ void SettingsSetup(){
     std::ifstream in("settings.json");
     json data = json::parse(in);
     for(const auto & [key, value] : data.items()){
-	auto setting = Types::Settings.find(key);
-	if(setting != Types::Settings.end()){
+	auto setting = VARS::Settings.find(key);
+	if(setting != VARS::Settings.end()){
 	    try {
 		setting->second = value;
 	    } 
@@ -69,9 +69,9 @@ void WebLoop(std::string jwt){
     del.close();
     OrderHandling::DeleteOrder(jwt);
     items = CurlReq::q.Add([]{ return CurlReq::__GET("https://api.warframe.market/v2/items");}).get();
-    while (Types::LogLoop) {
+    while (VARS::LogLoop) {
 	for(json item: items["data"]){
-	    auto trade = Sorting::ValidTrade(item["slug"], item["tags"], Types::Settings["-l"] != 0);
+	    auto trade = Sorting::ValidTrade(item["slug"], item["tags"], VARS::Settings["-l"] != 0);
 	    if(trade.good_trade){
 		std::string id = item["id"].get<std::string>();
 		OrderHandling::PostOrder(jwt, id, tradeType::buy, trade);
@@ -81,7 +81,6 @@ void WebLoop(std::string jwt){
     CurlReq::disconnect();
 }
 
-
 void Set(std::vector<std::string> args){
     if(args.size() > 4){
 	std::cout << "too many arguments given" << std::endl;
@@ -90,7 +89,7 @@ void Set(std::vector<std::string> args){
     std::optional<std::string> mode = (args.size() >= 3) ? std::optional<std::string>{(std::string)args[2]} : std::nullopt;
     if(mode.has_value()){
 	CreateSettings();
-	auto setting = Types::Settings.find(mode.value());
+	auto setting = VARS::Settings.find(mode.value());
 	int value;
 	try {
 	    if(args.size() < 4){
@@ -102,7 +101,7 @@ void Set(std::vector<std::string> args){
 	    std::cout << "error: " << e.what() << std::endl;
 	    return;
 	}
-	if(setting != Types::Settings.end()){
+	if(setting != VARS::Settings.end()){
 	    SettingsSetup();
 	    ChangeSettings(MapElement{setting->first, value});
 	    std::cout << "setting changed succesfully" << std::endl;
@@ -120,46 +119,46 @@ void Set(std::vector<std::string> args){
 
 void Run(std::vector<std::string> args){
     if(args.size() > 4){
-	std::cout << "too many arguments given" << std::endl;
-	return;
+		std::cout << "too many arguments given" << std::endl;
+		return;
     }
-    std::optional<std::string> mode = (args.size() >= 3) ? std::optional<std::string>{(std::string)args[2]} : std::nullopt;
-    auto setting = Types::Settings.find(mode.value());
-    if(mode.has_value()){
-	if(Types::RunModes.find(mode.value()) == Types::RunModes.end()){
-	    std::cout << "mode not recognized" << std::endl;
-	    return;
-	}
-	if(args.size() != 4){
-	    std::cout << "invalid command. \nNOTE:all web operation require your jwt token in the last argument" << std::endl;
-	    return;
-	}
-
-	if(mode.value() == "-w"){
-	    SettingsSetup();
-	    WebLoop(args[3]);
-	}
-	else if (mode.value() == "-d") {
-	    CurlReq::setup();
-	    OrderHandling::DeleteOrder(args[3]);
-	    CurlReq::q.WaitUntilQueueEmpty();
-	    CurlReq::disconnect();
-	}
-	else if (mode.value() == "-l") {
-	    CurlReq::setup();
-	    items = CurlReq::q.Add([]{ return CurlReq::__GET("https://api.warframe.market/v2/items");}).get();
-	    OrderHandling::EElogChecking();
-	    CurlReq::disconnect();
-	}
+    if(args.size() == 4){
+    	std::string mode = args[2];
+		if(VARS::RunModes.find(mode) == VARS::RunModes.end()){
+			std::cout << "mode not recognized" << std::endl;
+			return;
+		}
+		
+		if(mode == "-w"){
+			VARS::JWT = args[3];
+			SettingsSetup();
+			WebLoop(args[3]);
+		}
+		else if (mode == "-d") {
+			VARS::JWT = args[3];
+			CurlReq::setup();
+			OrderHandling::DeleteOrder(args[3]);
+			CurlReq::q.WaitUntilQueueEmpty();
+			CurlReq::disconnect();
+		}
+		else if (mode == "-l") {
+			VARS::JWT = args[3];
+			CurlReq::setup();
+			items = CurlReq::q.Add([]{ return CurlReq::__GET("https://api.warframe.market/v2/items");}).get();
+			OrderHandling::EElogChecking();
+			CurlReq::disconnect();
+		}
     }
-    else if(setting == Types::Settings.end()) {
+    if(args.size() == 3) {
+		if(VARS::RunModes.find(args[2]) != VARS::RunModes.end()){
+			std::cout << "invalid command. \nNOTE:all web operation require your jwt token in the last argument" << std::endl;
+			return;
+		}
+		VARS::JWT = args[2];
     	std::thread InGameTrades(OrderHandling::EElogChecking);
-	WebLoop(args[2]);
-	InGameTrades.join();
-    }
-    else {
-	std::cout << "invalid command. \nNOTE:all web operation require your jwt token in the last argument" << std::endl;
-    }
+		WebLoop(args[2]);
+		InGameTrades.join();
+	}
 }
 
 void CommandDispatch(std::vector<std::string> args){

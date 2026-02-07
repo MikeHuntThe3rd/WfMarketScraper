@@ -147,7 +147,7 @@ namespace CurlReq {
 		worker = std::thread([this]{ QueueUnloading(); });
 	}	
 	void Queuing::QueueUnloading() {
-		Types::Task task;
+		VARS::Task task;
 		while(true){
 			std::unique_lock<std::mutex> lock(thread_lock);
 			cv.wait(lock, [&]{return !tasks.empty();});
@@ -160,7 +160,7 @@ namespace CurlReq {
 		}
 	}
 	std::future<json> Queuing::Add(std::function<json()> f){
-		Types::Task task;
+		VARS::Task task;
 		task.work = std::move(f);
 		std::future<json> future = task.promise.get_future();
 		{

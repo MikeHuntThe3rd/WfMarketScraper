@@ -1,3 +1,4 @@
+#pragma once
 #include <cstring>
 #include <string>
 #include <sstream>
@@ -5,10 +6,10 @@
 #include <vector>
 #include <fstream>
 #include "json.hpp"
-#include "Types.hpp"
+#include "VARS.hpp"
 #include "CurlReq.hpp"
 
-using namespace Types;
+using namespace VARS;
 using namespace CurlReq;
 using json = nlohmann::json;
 namespace OrderHandling {
@@ -23,6 +24,6 @@ namespace OrderHandling {
     local_trade ResultConversion(std::vector<std::string> item, tradeType Ttype);
     std::string Implode(std::vector<std::string> array, char seperator);
     std::string GetIdFromSlug(std::string slug);
-    Types::itemType GetITypeFromSlug(std::string slug);
+    VARS::itemType GetITypeFromSlug(std::string slug);
     void LowerCase(std::string & word);
 }

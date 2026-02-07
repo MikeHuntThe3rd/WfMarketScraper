@@ -1,11 +1,11 @@
 #pragma once
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
 #ifdef _WIN32
     #define NOMINMAX
 #endif
 
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <any>
 #include <limits>
 #include <future>
@@ -13,9 +13,10 @@
 #include "json.hpp"
 
 using json = nlohmann::json;
-namespace Types {
+namespace VARS {
     //global generics
     inline json items;
+    inline std::string JWT = "";
     //atomics
     inline std::atomic<bool> LogLoop{true};
     //enums

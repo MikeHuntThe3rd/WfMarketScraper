@@ -6,11 +6,11 @@
 #include <fstream>
 #include <optional>
 #include "json.hpp"
-#include "Types.hpp"
+#include "VARS.hpp"
 #include "CurlReq.hpp"
 
 using json = nlohmann::json;
-using namespace Types;
+using namespace VARS;
 namespace Sorting {
     //variables
     extern std::string slug;

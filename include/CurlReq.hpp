@@ -10,7 +10,7 @@
 #include <condition_variable>
 #include <fstream>
 #include "json.hpp"
-#include "Types.hpp"
+#include "VARS.hpp"
 #include <curl/curl.h>
 
 
@@ -39,7 +39,7 @@ namespace CurlReq {
             std::future<json> Add(std::function<json()> f);
 	    void WaitUntilQueueEmpty();
         private: 
-            std::queue<Types::Task> tasks;
+            std::queue<VARS::Task> tasks;
             std::mutex thread_lock;
             std::condition_variable cv;
             std::thread worker;

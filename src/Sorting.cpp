@@ -1,5 +1,5 @@
 #include "Sorting.hpp"
-#include "Types.hpp"
+#include "VARS.hpp"
 namespace Sorting {
     std::string slug = "";
     std::ofstream logfile;
@@ -44,7 +44,7 @@ namespace Sorting {
             break;
         }
         
-        if(vol > Types::Settings["-f"]){
+        if(vol > VARS::Settings["-f"]){
             return true;
         }
         else{
@@ -102,7 +102,7 @@ namespace Sorting {
         }
         else logfile << "no good mod trade found: " << std::endl;
         
-        if(value_found && margin > Types::Settings["-m"] && Frequency(itemType::mod , best.level)){
+        if(value_found && margin > VARS::Settings["-m"] && Frequency(itemType::mod , best.level)){
             return best;
         }
         else{
@@ -125,7 +125,7 @@ namespace Sorting {
         }
         logfile << "found sell, buy: "<< sell_trade << buy_trade << std::endl;
         logfile << "margin: " << sell - buy << std::endl;
-        if((sell_trade && buy_trade) && sell - buy > Types::Settings["-m"] && Frequency(itemType::basic)){
+        if((sell_trade && buy_trade) && sell - buy > VARS::Settings["-m"] && Frequency(itemType::basic)){
             // std::cout << "sell:" << sell << std::endl;
             // std::cout << "buy:" << buy << std::endl;
             return basic{sell, buy};
@@ -212,7 +212,7 @@ namespace Sorting {
         if(best.has_value()) logfile << "struct of the best sculpture (stars: c, a):" << best->cyanStars + " " + best->amberStars << std::endl;
         else logfile << "best is empty" << std::endl;
 
-        if(best.has_value() && margin > Types::Settings["-f"] && Frequency(itemType::Ayatan, best)){
+        if(best.has_value() && margin > VARS::Settings["-f"] && Frequency(itemType::Ayatan, best)){
             return std::nullopt;
         } 
         else {

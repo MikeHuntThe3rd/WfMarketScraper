@@ -1,6 +1,6 @@
 #include "OrderHandling.hpp"
 #include "CurlReq.hpp"
-#include "Types.hpp"
+#include "VARS.hpp"
 #include <algorithm>
 #include <cctype>
 #include <ios>
@@ -27,7 +27,7 @@ namespace OrderHandling {
 	return result;
     }
 
-    Types::itemType GetITypeFromSlug(std::string slug) {
+    VARS::itemType GetITypeFromSlug(std::string slug) {
 	for(const auto & curr : items["data"]){
 	    if(curr["slug"] == slug){
 		std::vector<std::string> tags = curr["tags"];
@@ -35,15 +35,15 @@ namespace OrderHandling {
 		if(std::find(tags.begin(), tags.end(), "mod") != tags.end() &&
 		std::find(tags.begin(), tags.end(), "veiled_riven") == tags.end())
 		{
-		    return Types::itemType::mod;
+		    return VARS::itemType::mod;
 		}
 		else 
 		{
-		    return Types::itemType::basic;
+		    return VARS::itemType::basic;
 		}
 	    }
 	}
-	return Types::itemType::Ayatan;
+	return VARS::itemType::Ayatan;
     }
 
     std::string GetIdFromSlug(std::string slug) {
@@ -60,12 +60,12 @@ namespace OrderHandling {
     }
     
     local_trade ResultConversion(std::vector<std::string> item, tradeType Ttype){
-	Types::local_trade result = Types::local_trade{Ttype, Types::itemType::basic};
+	VARS::local_trade result = VARS::local_trade{Ttype, VARS::itemType::basic};
 	std::vector<std::string> name;
 	std::vector<std::string> data;
 	for(int i = 0; i < item.size(); i++){
 	    if(item[i] == "Platinum") {
-		result = Types::local_trade{ Ttype, itemType::platinum, "plat"};
+		result = VARS::local_trade{ Ttype, itemType::platinum, "plat"};
 		data.insert(data.end(), item.begin() + i, item.end());
 		break;
 	    }
@@ -98,13 +98,13 @@ namespace OrderHandling {
     }
 
     void HandleTrades(std::vector<local_trade> Trades, std::string JWT){
-json orders = CurlReq::q.Add([JWT]{ return CurlReq::__GET("https://api.warframe.market/v2/orders/my", {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});}).get();
+	json orders = CurlReq::q.Add([JWT]{ return CurlReq::__GET("https://api.warframe.market/v2/orders/my", {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});}).get();
 	for(local_trade & trade : Trades){
 	    switch (trade.Ttype) {
-		case  Types::tradeType::sell:
+		case  VARS::tradeType::sell:
 		    HandleSell(trade, orders);
 		    break;
-		case  Types::tradeType::buy:
+		case  VARS::tradeType::buy:
 		    HandleBuy(trade, orders);
 		    break;
 	    }
@@ -131,12 +131,12 @@ json orders = CurlReq::q.Add([JWT]{ return CurlReq::__GET("https://api.warframe.
 	EE.seekg(0, std::ios::end);
         std::string line;
         std::vector<std::vector<std::string>> soldItems, boughtItems;
-        while(Types::LogLoop){
+        while(VARS::LogLoop){
             //ifstream
             EE.clear();
             EE.seekg(0, std::ios::cur);
             //variables
-            std::pair<bool, Types::tradeType> CheckUnlocked = {false, Types::tradeType::sell};
+            std::pair<bool, VARS::tradeType> CheckUnlocked = {false, VARS::tradeType::sell};
             //file check by lines
             while (std::getline(EE, line)) {
                 //line data gathering
@@ -149,7 +149,7 @@ json orders = CurlReq::q.Add([JWT]{ return CurlReq::__GET("https://api.warframe.
 
                 //logic
                 if(line.find("and will receive from") != std::string::npos){
-                    CheckUnlocked.second = Types::tradeType::buy;
+                    CheckUnlocked.second = VARS::tradeType::buy;
                     goto trade_type_swap;
                 }
 
@@ -161,14 +161,14 @@ json orders = CurlReq::q.Add([JWT]{ return CurlReq::__GET("https://api.warframe.
 		    boughtItems.push_back(OrderHandling::SeperateBy(ss, ln, ' '));
 		}
 
-                if(CheckUnlocked.first && line.length() > 0 && CheckUnlocked.second == Types::tradeType::sell)
+                if(CheckUnlocked.first && line.length() > 0 && CheckUnlocked.second == VARS::tradeType::sell)
 		    soldItems.push_back(spaceSeperated);
-                else if(CheckUnlocked.first && line.length() > 0 && CheckUnlocked.second == Types::tradeType::buy)
+                else if(CheckUnlocked.first && line.length() > 0 && CheckUnlocked.second == VARS::tradeType::buy)
 		    boughtItems.push_back(spaceSeperated);
 
 		//state checking
                 if(line.find("description=Are you sure you want to accept this trade? You are offering:") != std::string::npos){
-                    CheckUnlocked = {true, Types::tradeType::sell};
+                    CheckUnlocked = {true, VARS::tradeType::sell};
 		    soldItems.clear();
 		    boughtItems.clear();
                 }
@@ -188,7 +188,7 @@ json orders = CurlReq::q.Add([JWT]{ return CurlReq::__GET("https://api.warframe.
 			std::cout << curr.slug << std::endl;
 		    }
 		    //data resetting
-                    CheckUnlocked = {false, Types::tradeType::sell};
+                    CheckUnlocked = {false, VARS::tradeType::sell};
 		    soldItems.clear();
 		    boughtItems.clear();
                 }
@@ -209,7 +209,8 @@ json orders = CurlReq::q.Add([JWT]{ return CurlReq::__GET("https://api.warframe.
             }
         }
     }
-    void UpdateOrder(std::string JWT, std::string id, itemType type, tradeType trade_type, std::any data){
+    
+	void UpdateOrder(std::string JWT, std::string id, itemType type, tradeType trade_type, std::any data){
         json j;
         j["quantity"] = 1;
         j["visible"] = false;
@@ -235,7 +236,8 @@ json orders = CurlReq::q.Add([JWT]{ return CurlReq::__GET("https://api.warframe.
 
         CurlReq::q.Add([id, JWT, j]{ return __PATCH("https://api.warframe.market/v2/order/" + id, JWT, j.dump());});
     }
-    void PostOrder(std::string JWT, std::string id, tradeType type, trade_return trade){
+    
+	void PostOrder(std::string JWT, std::string id, tradeType type, trade_return trade){
         json j;
         j["itemId"] = id;
 	j["type"] = (type == tradeType::buy) ? "buy" : "sell";
