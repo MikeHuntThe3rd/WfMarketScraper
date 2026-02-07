@@ -56,10 +56,10 @@ namespace VARS {
     };
     struct local_trade 
     {
-	tradeType Ttype;
-	itemType Itype;
-	std::string slug = "empty slug", id = "empty id";
-	int amount = 1, level = 0;
+        tradeType Ttype;
+        itemType Itype;
+        std::string slug = "empty slug", id = "empty id";
+        int amount = 1, level = 0;
     };
     struct Task
     {

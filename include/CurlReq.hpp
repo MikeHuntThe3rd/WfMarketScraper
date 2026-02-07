@@ -29,9 +29,9 @@ namespace CurlReq {
     static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* data);
     //methods
     json __GET(std::string https, std::vector<std::string> headers = {"accept: application/json", "Language: en"});
-    json __POST(std::string https, std::string JWT, std::string body);
-    json __DELETE(std::string https, std::string JWT);
-    json __PATCH(std::string https, std::string JWT, std::string body);
+    json __POST(std::string https, std::string body);
+    json __DELETE(std::string https);
+    json __PATCH(std::string https, std::string body);
     //queuing class
     class Queuing{
         public:

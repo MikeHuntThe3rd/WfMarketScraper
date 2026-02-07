@@ -97,18 +97,18 @@ namespace OrderHandling {
 	return result;
     }
 
-    void HandleTrades(std::vector<local_trade> Trades, std::string JWT){
-	json orders = CurlReq::q.Add([JWT]{ return CurlReq::__GET("https://api.warframe.market/v2/orders/my", {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});}).get();
-	for(local_trade & trade : Trades){
-	    switch (trade.Ttype) {
-		case  VARS::tradeType::sell:
-		    HandleSell(trade, orders);
-		    break;
-		case  VARS::tradeType::buy:
-		    HandleBuy(trade, orders);
-		    break;
-	    }
-	}
+    void HandleTrades(std::vector<local_trade> Trades){
+		json orders = CurlReq::q.Add([]{ return CurlReq::__GET("https://api.warframe.market/v2/orders/my", {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + VARS::JWT});}).get();
+		for(local_trade & trade : Trades){
+			switch (trade.Ttype) {
+				case  VARS::tradeType::sell:
+					HandleSell(trade, orders);
+					break;
+				case  VARS::tradeType::buy:
+					HandleBuy(trade, orders);
+					break;
+			}
+		}
     }
 
     void HandleSell(local_trade & trade, json & orders){
@@ -198,19 +198,19 @@ namespace OrderHandling {
         }	
     }
 
-    void DeleteOrder(std::string JWT, std::string id){
+    void DeleteOrder(std::string id){
         if(id != ""){
-            CurlReq::q.Add([id, JWT]{return CurlReq::__DELETE("https://api.warframe.market/v2/order/" + id, JWT);});
+            CurlReq::q.Add([id]{return CurlReq::__DELETE("https://api.warframe.market/v2/order/" + id);});
         }
         else {
-            json orders = CurlReq::q.Add([JWT]{ return CurlReq::__GET("https://api.warframe.market/v2/orders/my", {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});}).get();
+            json orders = CurlReq::q.Add([]{ return CurlReq::__GET("https://api.warframe.market/v2/orders/my", {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + VARS::JWT});}).get();
             for(json order: orders["data"]){
-                CurlReq::q.Add([order, JWT]{ return CurlReq::__DELETE("https://api.warframe.market/v2/order/" + order["id"].get<std::string>(), JWT);});
+                CurlReq::q.Add([order]{ return CurlReq::__DELETE("https://api.warframe.market/v2/order/" + (std::string)order["id"]); });
             }
         }
     }
     
-	void UpdateOrder(std::string JWT, std::string id, itemType type, tradeType trade_type, std::any data){
+	void UpdateOrder(std::string id, itemType type, tradeType trade_type, std::any data){
         json j;
         j["quantity"] = 1;
         j["visible"] = false;
@@ -234,13 +234,13 @@ namespace OrderHandling {
             }
         }
 
-        CurlReq::q.Add([id, JWT, j]{ return __PATCH("https://api.warframe.market/v2/order/" + id, JWT, j.dump());});
+        CurlReq::q.Add([id, j]{ return __PATCH("https://api.warframe.market/v2/order/" + id, j.dump());});
     }
     
-	void PostOrder(std::string JWT, std::string id, tradeType type, trade_return trade){
+	void PostOrder(std::string id, tradeType type, trade_return trade){
         json j;
         j["itemId"] = id;
-	j["type"] = (type == tradeType::buy) ? "buy" : "sell";
+		j["type"] = (type == tradeType::buy) ? "buy" : "sell";
         j["quantity"] = 1;
         j["visible"] = false;
         // j["perTrade"] = 1;
@@ -265,6 +265,6 @@ namespace OrderHandling {
                 break;
             }
         }
-        CurlReq::q.Add([JWT, j]{ return CurlReq::__POST("https://api.warframe.market/v2/order", JWT, j.dump());});
+        CurlReq::q.Add([j]{ return CurlReq::__POST("https://api.warframe.market/v2/order", j.dump());});
     }
 }

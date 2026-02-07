@@ -60,7 +60,7 @@ namespace CurlReq {
 			}
 		}
 	}
-	json __POST(std::string https, std::string JWT, std::string body){
+	json __POST(std::string https, std::string body){
 		//body is a very specific kind of string: R"({}) make sure you format everything like this for it to work
 		// std::string bdy = R"({
 		// 	"itemId": "56783f24cbfa8f0432dd899c",
@@ -70,7 +70,7 @@ namespace CurlReq {
 		// 	"visible": false
         // })";
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
-		SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});
+		SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + VARS::JWT});
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
 		CURLcode res = curl_easy_perform(curl);
 		std::ofstream logfile("out.log", std::ios::app);
@@ -97,9 +97,9 @@ namespace CurlReq {
 			return result;
 		}
 	}
-	json __DELETE(std::string https, std::string JWT){
+	json __DELETE(std::string https){
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
-		SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});
+		SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + VARS::JWT});
 		CURLcode response = curl_easy_perform(curl);
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, nullptr);
 		if(response != CURLE_OK){
@@ -119,9 +119,9 @@ namespace CurlReq {
 			return result;
 		}
 	}
-	json __PATCH(std::string https, std::string JWT, std::string body){
+	json __PATCH(std::string https, std::string body){
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
-		SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + JWT});
+		SETcurlData(https, {"Content-Type: application/json", "Accept: application/json", "Authorization: Bearer " + VARS::JWT});
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
 		CURLcode response = curl_easy_perform(curl);
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, nullptr);

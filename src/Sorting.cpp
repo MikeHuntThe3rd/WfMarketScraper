@@ -4,7 +4,7 @@ namespace Sorting {
     std::string slug = "";
     std::ofstream logfile;
     bool Frequency(itemType type, std::optional<std::any> data){
-        json stats = CurlReq::q.Add([]{return CurlReq::__GET("https://api.warframe.market/v1/items/" + (std::string)slug  + "/statistics");}).get();
+        json stats = CurlReq::q.Add([]{return CurlReq::__GET("https://api.warframe.market/v1/items/" + (std::string)slug  + "/statistics"); }).get();
         int vol = 0;
         switch (type)
         {

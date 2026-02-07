@@ -62,19 +62,19 @@ void SettingsSetup(){
 	}
     }
 }
-
-void WebLoop(std::string jwt){
+//TODO: NEW FUNCTION TO CHECK IF TRADE EXISTS AND UPDATE IF IT DOES
+void WebLoop(){
     CurlReq::setup();
     std::ofstream del("out.log", std::ios::trunc);
     del.close();
-    OrderHandling::DeleteOrder(jwt);
+    OrderHandling::DeleteOrder();
     items = CurlReq::q.Add([]{ return CurlReq::__GET("https://api.warframe.market/v2/items");}).get();
     while (VARS::LogLoop) {
 	for(json item: items["data"]){
 	    auto trade = Sorting::ValidTrade(item["slug"], item["tags"], VARS::Settings["-l"] != 0);
 	    if(trade.good_trade){
-		std::string id = item["id"].get<std::string>();
-		OrderHandling::PostOrder(jwt, id, tradeType::buy, trade);
+			std::string id = item["id"].get<std::string>();
+			OrderHandling::PostOrder(id, tradeType::buy, trade);
 	    }
 	}
     }
@@ -129,20 +129,19 @@ void Run(std::vector<std::string> args){
 			return;
 		}
 		
+		VARS::JWT = args[3];
+		
 		if(mode == "-w"){
-			VARS::JWT = args[3];
 			SettingsSetup();
-			WebLoop(args[3]);
+			WebLoop();
 		}
 		else if (mode == "-d") {
-			VARS::JWT = args[3];
 			CurlReq::setup();
-			OrderHandling::DeleteOrder(args[3]);
+			OrderHandling::DeleteOrder();
 			CurlReq::q.WaitUntilQueueEmpty();
 			CurlReq::disconnect();
 		}
 		else if (mode == "-l") {
-			VARS::JWT = args[3];
 			CurlReq::setup();
 			items = CurlReq::q.Add([]{ return CurlReq::__GET("https://api.warframe.market/v2/items");}).get();
 			OrderHandling::EElogChecking();
@@ -156,7 +155,7 @@ void Run(std::vector<std::string> args){
 		}
 		VARS::JWT = args[2];
     	std::thread InGameTrades(OrderHandling::EElogChecking);
-		WebLoop(args[2]);
+		WebLoop();
 		InGameTrades.join();
 	}
 }
