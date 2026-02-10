@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
 
-project(WfMarketScraper)
+project(scraper)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,8 +21,8 @@ endif()
 
 file(GLOB_RECURSE SRC CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
-add_executable(main "${SRC}")
+add_executable(${CMAKE_PROJECT_NAME} "${SRC}")
 
-target_include_directories(main PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/" ${CURL_INCLUDE_DIR})
-target_link_libraries(main PRIVATE ${CURL_LIBRARY})
-target_link_options(main PRIVATE -static-libstdc++ -static-libgcc)
+target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/" ${CURL_INCLUDE_DIR})
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ${CURL_LIBRARY})
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE -static-libstdc++ -static-libgcc)
