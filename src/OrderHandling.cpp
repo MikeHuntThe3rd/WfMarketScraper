@@ -12,11 +12,6 @@
 #include <vector>
 
 namespace OrderHandling {
-// trades
-Trades::Trades() {
-  managerT = std::thread([this] { Manager(); });
-}
-void Trades::Manager() {}
 // generic
 std::vector<std::string> SeperateBy(std::stringstream &SS, std::string &line,
                                     char separator) {

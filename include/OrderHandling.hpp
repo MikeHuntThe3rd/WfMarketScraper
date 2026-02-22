@@ -14,23 +14,7 @@ using namespace VARS;
 using namespace CurlReq;
 using json = nlohmann::json;
 namespace OrderHandling {
-// Trades
-class Trades {
-public:
-  Trades();
-  std::vector<VARS::Trade> Read();
-  void Add(Trade trade);
-  void Remove(std::string id);
-  void Edit(std::string id, Trade trade);
 
-private:
-  void Manager();
-  std::vector<VARS::Trade> trades;
-  std::mutex thread_lock;
-  std::condition_variable cv;
-  std::thread managerT;
-};
-inline Trades trades{};
 // functions
 // Major functions
 void EElogChecking();
