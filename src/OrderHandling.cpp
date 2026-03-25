@@ -145,7 +145,6 @@ void EElogChecking() {
   while (VARS::LogLoop) {
     // ifstream
     EE.clear();
-    EE.seekg(0, std::ios::cur);
     // variables
     std::pair<bool, VARS::tradeType> CheckUnlocked = {false,
                                                       VARS::tradeType::sell};
