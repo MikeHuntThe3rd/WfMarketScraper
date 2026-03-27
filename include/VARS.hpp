@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #ifdef _WIN32
 #define NOMINMAX
 #endif
@@ -13,6 +14,8 @@
 #include <unordered_set>
 
 using json = nlohmann::json;
+using namespace std;
+
 namespace VARS {
 // global generics
 inline json items;
@@ -27,7 +30,7 @@ enum class command { run, set };
 inline std::unordered_set<std::string> RunModes = {"-w", "-d", "-l"};
 // maps
 inline std::unordered_map<std::string, int> Settings = {
-    {"-m", 10}, {"-f", 96}, {"-l", 0}};
+    {"-m", 10}, {"-f", 96}, {"-l", 0}, {"-v", 0}};
 // structs
 struct rank // stats for a mod at a certain level (only different mod ranks are
             // saved)
@@ -47,18 +50,14 @@ struct basic {
   int sell, buy;
 };
 struct Trade {
-  bool good_trade;
   std::string slug, id;
+  int buy, sell;
   itemType Itype;
-  tradeType Ttype;
-  std::any data;
+  tradeType Tstate;
+  optional<int> level = nullopt, cyanStar = nullopt, amberStar = nullopt;
+  int amount = 1;
 };
-struct local_trade {
-  tradeType Ttype;
-  itemType Itype;
-  std::string slug = "empty slug", id = "empty id";
-  int amount = 1, level = 0;
-};
+
 struct Task {
   std::function<json()> work;
   std::promise<json> promise;

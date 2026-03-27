@@ -1,6 +1,7 @@
 #include "Sorting.hpp"
 #include "OrderHandling.hpp"
 #include "VARS.hpp"
+#include <optional>
 namespace Sorting {
 std::string slug = "";
 std::ofstream logfile;
@@ -54,17 +55,17 @@ bool Frequency(itemType type, std::optional<std::any> data) {
     return false;
   }
 }
-std::optional<rank> RankBasedMargin(json orders) {
-  std::vector<rank> ranks;
-  auto find_element = [&ranks](int level) -> rank & {
+std::optional<Trade> RankBasedMargin(json orders) {
+  std::vector<VARS::rank> ranks;
+  auto find_element = [&ranks](int level) -> VARS::rank & {
     auto iterator =
-        std::find_if(ranks.begin(), ranks.end(), [&level](rank &element) {
+        std::find_if(ranks.begin(), ranks.end(), [&level](VARS::rank &element) {
           return element.level == level;
         });
     if (iterator != ranks.end()) {
       return *iterator;
     } else {
-      ranks.emplace_back(rank{level});
+      ranks.emplace_back(VARS::rank{level});
       return ranks.back();
     }
   };
@@ -89,7 +90,7 @@ std::optional<rank> RankBasedMargin(json orders) {
     }
   }
   int margin = std::numeric_limits<int>::min();
-  rank best;
+  VARS::rank best;
   bool value_found = false;
   for (const auto &rank : ranks) {
     if ((rank.buy_trade && rank.sell_trade) && rank.sell - rank.buy > margin) {
@@ -106,12 +107,16 @@ std::optional<rank> RankBasedMargin(json orders) {
 
   if (value_found && margin > VARS::Settings["-m"] &&
       Frequency(itemType::mod, best.level)) {
-    return best;
+    return Trade{slug,          OrderHandling::GetIdFromSlug(slug),
+                 best.buy,      best.sell,
+                 itemType::mod, tradeType::buy,
+                 best.level};
   } else {
     return std::nullopt;
   }
 }
-std::optional<basic> BasicMargin(json orders) {
+
+std::optional<Trade> BasicMargin(json orders) {
   int buy = std::numeric_limits<int>::min();
   int sell = std::numeric_limits<int>::max();
   bool buy_trade = false, sell_trade = false;
@@ -127,18 +132,20 @@ std::optional<basic> BasicMargin(json orders) {
       buy_trade = true;
     }
   }
-  logfile << "found sell, buy: " << sell_trade << buy_trade << std::endl;
   logfile << "margin: " << sell - buy << std::endl;
   if ((sell_trade && buy_trade) && sell - buy > VARS::Settings["-m"] &&
       Frequency(itemType::basic)) {
-    // std::cout << "sell:" << sell << std::endl;
-    // std::cout << "buy:" << buy << std::endl;
-    return basic{sell, buy};
+    return Trade{slug,
+                 OrderHandling::GetIdFromSlug(slug),
+                 buy,
+                 sell,
+                 itemType::basic,
+                 tradeType::buy};
   } else {
     return std::nullopt;
   }
 }
-std::optional<ayatan_sculpture> AyatanMargin(json orders) {
+std::optional<Trade> AyatanMargin(json orders) {
   std::vector<ayatan_sculpture> sculptures;
 
   auto findElement = [&sculptures](int cyanStars, int amberStars) {
@@ -228,9 +235,9 @@ std::optional<ayatan_sculpture> AyatanMargin(json orders) {
     return std::nullopt;
   }
 }
-Trade ValidTrade(std::string item, std::vector<std::string> tags, bool log) {
+optional<Trade> ValidTrade(string item, vector<string> tags, bool log) {
   slug = item;
-  Trade __return;
+  optional<Trade> __return;
   if (log) {
     logfile.open("out.log", std::ios::app);
   }
@@ -245,36 +252,26 @@ Trade ValidTrade(std::string item, std::vector<std::string> tags, bool log) {
     logfile << "==========AYATAN CHECK==========" << std::endl;
     logfile << "slug: " << slug << std::endl;
 
-    std::optional<ayatan_sculpture> result = AyatanMargin(orders);
+    auto result = AyatanMargin(orders);
     if (result.has_value()) {
       logfile << "AYATAN!!!!!!" << std::endl;
       std::cout << "AYATAN!!!!!!" << std::endl;
-
-      __return = Trade{true,
-                       item,
-                       OrderHandling::GetIdFromSlug(item),
-                       itemType::Ayatan,
-                       tradeType::buy,
-                       result.value()};
-    } else {
-      __return = {false};
     }
+    __return = result;
+
   } else if (std::find(tags.begin(), tags.end(), "mod") != tags.end() &&
              std::find(tags.begin(), tags.end(), "veiled_riven") ==
                  tags.end()) {
     logfile << "==========MOD CHECK==========" << std::endl;
     logfile << "slug: " << slug << std::endl;
 
-    std::optional<rank> result = RankBasedMargin(orders);
+    auto result = RankBasedMargin(orders);
     if (result.has_value()) {
       logfile << "MOD!!!!!!" << std::endl;
       std::cout << "MOD!!!!!!" << std::endl;
+    }
 
-      __return = Trade{
-          true,          item,           OrderHandling::GetIdFromSlug(item),
-          itemType::mod, tradeType::buy, result.value()};
-    } else
-      __return = {false};
+    __return = result;
   } else {
     logfile << "==========BASIC CHECK==========" << std::endl;
     logfile << "slug: " << slug << std::endl;
@@ -283,15 +280,8 @@ Trade ValidTrade(std::string item, std::vector<std::string> tags, bool log) {
     if (result.has_value()) {
       logfile << "BASIC!!!!!!" << std::endl;
       std::cout << "BASIC!!!!!!" << std::endl;
-
-      __return = {true,
-                  item,
-                  OrderHandling::GetIdFromSlug(item),
-                  itemType::basic,
-                  tradeType::buy,
-                  result.value()};
-    } else
-      __return = {false};
+    }
+    __return = result;
   }
   logfile.close();
   return __return;

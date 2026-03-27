@@ -62,6 +62,7 @@ void SettingsSetup() {
     }
   }
 }
+
 // TODO: NEW FUNCTION TO CHECK IF TRADE EXISTS AND UPDATE IF IT DOES
 void WebLoop() {
   CurlReq::setup();
@@ -77,9 +78,9 @@ void WebLoop() {
     for (json item : items["data"]) {
       auto trade = Sorting::ValidTrade(item["slug"], item["tags"],
                                        VARS::Settings["-l"] != 0);
-      if (trade.good_trade) {
+      if (trade.has_value()) {
         std::string id = (std::string)item["id"];
-        OrderHandling::PostOrder(id, tradeType::buy, trade);
+        OrderHandling::PostOrder(trade.value());
       }
     }
   }

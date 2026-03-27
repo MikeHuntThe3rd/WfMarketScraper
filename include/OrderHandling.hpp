@@ -7,28 +7,27 @@
 #include <optional>
 #include <sstream>
 #include <string>
-#include <thread>
 #include <vector>
 
 using namespace VARS;
 using namespace CurlReq;
 using json = nlohmann::json;
+
 namespace OrderHandling {
 
 // functions
 // Major functions
 void EElogChecking();
 // Helper functions
-void PostOrder(std::string id, tradeType type, Trade trade);
+void PostOrder(Trade trd);
 void DeleteOrder(std::string id = "");
-void UpdateOrder(std::string id, itemType type, tradeType trade_type,
-                 std::any data);
+void UpdateOrder(Trade trd);
 std::vector<std::string> SeperateBy(std::stringstream &SS, std::string &line,
                                     char separator);
-void HandleTrades(std::vector<local_trade> Trades);
-void HandleSell(local_trade &trade, json &orders);
-void HandleBuy(local_trade &trade, json &orders);
-local_trade ResultConversion(std::vector<std::string> item, tradeType Ttype);
+void HandleTrades(std::vector<Trade> Trades);
+void HandleSell(Trade &trade, json &orders);
+void HandleBuy(Trade &trade, json &orders);
+Trade ResultConversion(std::vector<std::string> item, tradeType Ttype);
 std::string Implode(std::vector<std::string> array, char seperator);
 std::string GetIdFromSlug(std::string slug);
 VARS::itemType GetITypeFromSlug(std::string slug);

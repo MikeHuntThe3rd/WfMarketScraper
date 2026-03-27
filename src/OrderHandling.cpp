@@ -5,10 +5,8 @@
 #include <cctype>
 #include <ios>
 #include <iostream>
-#include <mutex>
 #include <sstream>
 #include <string>
-#include <thread>
 #include <vector>
 
 namespace OrderHandling {
@@ -63,15 +61,18 @@ void LowerCase(std::string &word) {
                  [](unsigned char ch) { return std::tolower(ch); });
 }
 
-local_trade ResultConversion(std::vector<std::string> item, tradeType Ttype) {
-  VARS::local_trade result = VARS::local_trade{Ttype, VARS::itemType::basic};
-  std::vector<std::string> name;
-  std::vector<std::string> data;
+Trade ResultConversion(std::vector<std::string> item, tradeType Ttype) {
+  int amount = 1, level = -1;
+  std::vector<std::string> data, name;
+
+  // get the name parts of the item
   for (int i = 0; i < item.size(); i++) {
     if (item[i] == "Platinum") {
-      result = VARS::local_trade{Ttype, itemType::platinum, "plat"};
-      data.insert(data.end(), item.begin() + i, item.end());
-      break;
+      amount = stoi(item[i + 2]);
+      auto trade =
+          Trade{"Platinum", "plat", amount, amount, itemType::platinum, Ttype};
+      trade.amount = amount;
+      return trade;
     }
     if (item[i] != "x" && item[i].find("(") == std::string::npos) {
       LowerCase(item[i]);
@@ -84,23 +85,22 @@ local_trade ResultConversion(std::vector<std::string> item, tradeType Ttype) {
 
   for (int i = 0; i < data.size(); i++) {
     if (data[i] == "x") {
-      result.amount = std::stoi(data[i + 1]);
+      amount = std::stoi(data[i + 1]);
       break;
     }
     if (data[i] == "RANK") {
-      result.level = std::stoi(data[i + 1]);
+      level = std::stoi(data[i + 1]);
       break;
     }
   }
-  if (result.Itype != itemType::platinum) {
-    result.slug = Implode(name, '_');
-    result.id = GetIdFromSlug(result.slug);
-    result.Itype = GetITypeFromSlug(result.slug);
-  }
+  string slug = OrderHandling::Implode(name, '_');
+  auto result = Trade{slug, OrderHandling::GetIdFromSlug(slug),    0,
+                      0,    OrderHandling::GetITypeFromSlug(slug), Ttype};
+  result.amount = amount;
   return result;
 }
 
-void HandleTrades(std::vector<local_trade> Trades) {
+void HandleTrades(std::vector<Trade> Trades) {
   json orders =
       CurlReq::q
           .Add([] {
@@ -110,8 +110,8 @@ void HandleTrades(std::vector<local_trade> Trades) {
                                    "Authorization: Bearer " + VARS::JWT});
           })
           .get();
-  for (local_trade &trade : Trades) {
-    switch (trade.Ttype) {
+  for (Trade &trade : Trades) {
+    switch (trade.Tstate) {
     case VARS::tradeType::sell:
       HandleSell(trade, orders);
       break;
@@ -122,14 +122,14 @@ void HandleTrades(std::vector<local_trade> Trades) {
   }
 }
 
-void HandleSell(local_trade &trade, json &orders) {
+void HandleSell(Trade &trade, json &orders) {
   for (const auto &order : orders) {
     if (order["id"] == trade.id) {
     }
   }
 }
 
-void HandleBuy(local_trade &trade, json &orders) {
+void HandleBuy(Trade &trade, json &orders) {
   for (const auto &order : orders) {
     if (order["id"] == trade.id) {
       // exec
@@ -139,7 +139,7 @@ void HandleBuy(local_trade &trade, json &orders) {
 
 void EElogChecking() {
   std::ifstream EE("../../out.txt");
-  EE.seekg(0, std::ios::end);
+  EE.seekg(0, std::ios::beg);
   std::string line;
   std::vector<std::vector<std::string>> soldItems, boughtItems;
   while (VARS::LogLoop) {
@@ -190,7 +190,7 @@ void EElogChecking() {
       // output
       if (line.find("description=The trade was successful!") !=
           std::string::npos) {
-        std::vector<local_trade> Trades;
+        std::vector<Trade> Trades;
 
         for (auto const &curr : soldItems) {
           Trades.push_back(ResultConversion(curr, tradeType::sell));
@@ -237,61 +237,62 @@ void DeleteOrder(std::string id) {
   }
 }
 
-void UpdateOrder(std::string id, itemType type, tradeType trade_type,
-                 std::any data) {
+void UpdateOrder(Trade trd) {
   json j;
   j["quantity"] = 1;
   j["visible"] = false;
 
-  switch (type) {
+  switch (trd.Itype) {
   case itemType::basic: {
-    if (trade_type == tradeType::buy)
-      j["platinum"] = std::any_cast<basic>(data).buy;
+    if (trd.Tstate == tradeType::buy)
+      j["platinum"] = trd.buy;
     else
-      j["platinum"] = std::any_cast<basic>(data).sell;
+      j["platinum"] = trd.sell;
     break;
   }
   case itemType::mod: {
-    if (trade_type == tradeType::buy)
-      j["platinum"] = std::any_cast<rank>(data).buy;
+    if (trd.Tstate == tradeType::buy)
+      j["platinum"] = trd.buy;
     else
-      j["platinum"] = std::any_cast<rank>(data).sell;
-    j["rank"] = std::any_cast<rank>(data).level;
+      j["platinum"] = trd.sell;
+    j["rank"] = trd.level;
     break;
   }
   case itemType::Ayatan: {
     j["perTrade"] = 1;
     break;
   }
+  default:
+    return;
   }
-
+  string id = trd.id;
   CurlReq::q.Add([id, j] {
     return __PATCH("https://api.warframe.market/v2/order/" + id, j.dump());
   });
 }
 
-void PostOrder(std::string id, tradeType type, Trade trade) {
+void PostOrder(Trade trd) {
   json j;
-  j["itemId"] = id;
-  j["type"] = (type == tradeType::buy) ? "buy" : "sell";
+  j["itemId"] = trd.id;
+  j["type"] = (trd.Tstate == tradeType::buy) ? "buy" : "sell";
   j["quantity"] = 1;
   j["visible"] = false;
   // j["perTrade"] = 1;
 
-  switch (trade.Itype) {
+  switch (trd.Itype) {
   case itemType::basic: {
-    if (type == tradeType::buy)
-      j["platinum"] = std::any_cast<basic>(trade.data).buy;
+    if (trd.Tstate == tradeType::buy)
+      j["platinum"] = trd.buy;
     else
-      j["platinum"] = std::any_cast<basic>(trade.data).sell;
+      j["platinum"] = trd.sell;
     break;
   }
   case itemType::mod: {
-    if (type == tradeType::buy)
-      j["platinum"] = std::any_cast<rank>(trade.data).buy;
+    if (trd.Tstate == tradeType::buy)
+      j["platinum"] = trd.buy;
     else
-      j["platinum"] = std::any_cast<rank>(trade.data).sell;
-    j["rank"] = std::any_cast<rank>(trade.data).level;
+      j["platinum"] = trd.sell;
+    j["rank"] = trd.level;
     break;
   }
   case itemType::Ayatan: {
@@ -300,6 +301,8 @@ void PostOrder(std::string id, tradeType type, Trade trade) {
     // })";
     break;
   }
+  default:
+    return;
   }
   CurlReq::q.Add([j] {
     return CurlReq::__POST("https://api.warframe.market/v2/order", j.dump());
