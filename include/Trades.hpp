@@ -1,21 +1,17 @@
 #pragma once
 #include "VARS.hpp"
-#include <optional>
 #include <string>
-#include <vector>
+#include <unordered_map>
 
 using namespace VARS;
 class Trades {
 public:
-  std::vector<Remotetrade> Read();
-  void Add(Remotetrade trade);
+  unordered_map<string, Trade> Read();
+  void Add(string id, Trade trd);
   void Remove(std::string id);
-  void Edit(std::string id, Remotetrade trade);
 
 private:
-  std::optional<std::vector<VARS::Remotetrade>::iterator>
-  FindById(std::string id);
-  std::vector<VARS::Remotetrade> Trades_inner;
+  unordered_map<string, Trade> Trades_inner;
   std::mutex thread_lock_key;
   std::condition_variable cv;
 };

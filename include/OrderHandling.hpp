@@ -16,9 +16,9 @@ namespace OrderHandling {
 // Major functions
 void EElogChecking();
 // Helper functions
-void PostOrder(Trade trd);
-void DeleteOrder(std::string id = "");
-void UpdateOrder(Trade trd);
+json PostOrder(Trade trd);
+json DeleteOrder(std::string id = "");
+json UpdateOrder(Trade trd);
 std::vector<std::string> SeperateBy(std::stringstream &SS, std::string &line,
                                     char separator);
 

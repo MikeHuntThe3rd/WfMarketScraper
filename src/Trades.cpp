@@ -1,47 +1,24 @@
 #include "Trades.hpp"
 #include "VARS.hpp"
-#include <algorithm>
 #include <mutex>
-#include <optional>
-#include <vector>
 
-void Trades::Add(Remotetrade trade) {
+void Trades::Add(string id, Trade trd) {
   std::lock_guard<std::mutex> lock(thread_lock_key);
-  Trades_inner.push_back(trade);
+  auto iter = Trades_inner.find(id);
+  if (iter == Trades_inner.end())
+    Trades_inner.insert({id, trd});
   cv.notify_one();
 }
 
 void Trades::Remove(std::string id) {
   std::lock_guard<std::mutex> lock(thread_lock_key);
-  auto iter = this->FindById(id);
-  if (iter.has_value()) {
-    Trades_inner.erase(iter.value());
-  }
+  auto iter = Trades_inner.find(id);
+  if (iter != Trades_inner.end())
+    Trades_inner.erase(iter);
   cv.notify_one();
 }
 
-void Trades::Edit(std::string id, Remotetrade trade) {
-  std::lock_guard<std::mutex> lock(thread_lock_key);
-  auto iter = this->FindById(id);
-  if (iter.has_value()) {
-    *iter.value() = trade;
-  }
-  cv.notify_one();
-}
-
-std::vector<Remotetrade> Trades::Read() {
+unordered_map<string, Trade> Trades::Read() {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   return Trades_inner;
-}
-
-std::optional<std::vector<Remotetrade>::iterator>
-Trades::FindById(std::string id) {
-  auto find_iter =
-      std::find_if(Trades_inner.begin(), Trades_inner.end(),
-                   [&id](const Trade &trade) { return trade.id == id; });
-  if (find_iter != Trades_inner.end()) {
-    return find_iter;
-  } else {
-    return std::nullopt;
-  }
 }

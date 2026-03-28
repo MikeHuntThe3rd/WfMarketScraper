@@ -187,26 +187,41 @@ void HandleTrade(Trade trd) {
                                    "Authorization: Bearer " + VARS::JWT});
           })
           .get();
+  auto map = trades.Read();
 
   for (json const &order : trades_remote["data"]) {
-    if (order["itemId"] == trd.id) {
-      switch (trd.Tstate) {
-      case VARS::tradeType::buy:
-        DeleteOrder(order["id"]);
-        break;
-      case VARS::tradeType::sell:
-        break;
+    if (map.find(order["id"]) != map.end() &&
+        map.find(order["id"])->second.slug == trd.slug) {
+      cout << "updating: " << trd.slug << endl;
+
+      json del_status = OrderHandling::DeleteOrder(order["id"]);
+      if (!del_status.empty() && del_status["error"] == nullptr)
+        trades.Remove(del_status["data"]["id"]);
+      else {
+        cout << "removal failed!" << endl;
+        return;
       }
-      break;
+
+      json post_status = OrderHandling::PostOrder(trd);
+      if (!post_status.empty() && post_status["error"] == nullptr)
+        trades.Add(post_status["data"]["id"], trd);
+      return;
     }
   }
+
+  json post_status = OrderHandling::PostOrder(trd);
+  if (!post_status.empty() && post_status["error"] == nullptr)
+    trades.Add(post_status["data"]["id"], trd);
 }
 
-void DeleteOrder(std::string id) {
+json DeleteOrder(std::string id) {
   if (id != "") {
-    CurlReq::q.Add([id] {
-      return CurlReq::__DELETE("https://api.warframe.market/v2/order/" + id);
-    });
+    return CurlReq::q
+        .Add([id] {
+          return CurlReq::__DELETE("https://api.warframe.market/v2/order/" +
+                                   id);
+        })
+        .get();
   } else {
     json orders =
         CurlReq::q
@@ -223,10 +238,11 @@ void DeleteOrder(std::string id) {
                                  (std::string)order["id"]);
       });
     }
+    return json{};
   }
 }
 
-void UpdateOrder(Trade trd) {
+json UpdateOrder(Trade trd) {
   json j;
   j["quantity"] = 1;
   j["visible"] = false;
@@ -252,15 +268,17 @@ void UpdateOrder(Trade trd) {
     break;
   }
   default:
-    return;
+    return json{};
   }
   string id = trd.id;
-  CurlReq::q.Add([id, j] {
-    return __PATCH("https://api.warframe.market/v2/order/" + id, j.dump());
-  });
+  return CurlReq::q
+      .Add([id, j] {
+        return __PATCH("https://api.warframe.market/v2/order/" + id, j.dump());
+      })
+      .get();
 }
 
-void PostOrder(Trade trd) {
+json PostOrder(Trade trd) {
   json j;
   j["itemId"] = trd.id;
   j["type"] = (trd.Tstate == tradeType::buy) ? "buy" : "sell";
@@ -291,10 +309,13 @@ void PostOrder(Trade trd) {
     break;
   }
   default:
-    return;
+    return json{};
   }
-  CurlReq::q.Add([j] {
-    return CurlReq::__POST("https://api.warframe.market/v2/order", j.dump());
-  });
+  return CurlReq::q
+      .Add([j] {
+        return CurlReq::__POST("https://api.warframe.market/v2/order",
+                               j.dump());
+      })
+      .get();
 }
 } // namespace OrderHandling

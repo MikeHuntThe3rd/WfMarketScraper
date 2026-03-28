@@ -63,12 +63,11 @@ void SettingsSetup() {
   }
 }
 
-// TODO: NEW FUNCTION TO CHECK IF TRADE EXISTS AND UPDATE IF IT DOES
 void WebLoop() {
   CurlReq::setup();
   std::ofstream del("out.log", std::ios::trunc);
   del.close();
-  OrderHandling::DeleteOrder();
+  // OrderHandling::DeleteOrder();
   items = CurlReq::q
               .Add([] {
                 return CurlReq::__GET("https://api.warframe.market/v2/items");
@@ -78,10 +77,8 @@ void WebLoop() {
     for (json item : items["data"]) {
       auto trade = Sorting::ValidTrade(item["slug"], item["tags"],
                                        VARS::Settings["-l"] != 0);
-      if (trade.has_value()) {
-        std::string id = (std::string)item["id"];
-        OrderHandling::PostOrder(trade.value());
-      }
+      if (trade.has_value())
+        OrderHandling::HandleTrade(trade.value());
     }
   }
   CurlReq::disconnect();
