@@ -58,6 +58,11 @@ struct Trade {
   int amount = 1;
 };
 
+struct Remotetrade {
+  string id;
+  Trade trd;
+};
+
 struct Task {
   std::function<json()> work;
   std::promise<json> promise;

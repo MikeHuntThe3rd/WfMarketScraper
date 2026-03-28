@@ -5,17 +5,17 @@
 #include <vector>
 
 using namespace VARS;
-
 class Trades {
 public:
-  std::vector<VARS::Trade> Read();
-  void Add(Trade trade);
+  std::vector<Remotetrade> Read();
+  void Add(Remotetrade trade);
   void Remove(std::string id);
-  void Edit(std::string id, Trade trade);
+  void Edit(std::string id, Remotetrade trade);
 
 private:
-  std::optional<std::vector<VARS::Trade>::iterator> FindById(std::string id);
-  std::vector<VARS::Trade> Trades_inner;
+  std::optional<std::vector<VARS::Remotetrade>::iterator>
+  FindById(std::string id);
+  std::vector<VARS::Remotetrade> Trades_inner;
   std::mutex thread_lock_key;
   std::condition_variable cv;
 };

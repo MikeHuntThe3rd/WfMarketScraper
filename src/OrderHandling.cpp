@@ -1,5 +1,6 @@
 #include "OrderHandling.hpp"
 #include "CurlReq.hpp"
+#include "Trades.hpp"
 #include "VARS.hpp"
 #include <algorithm>
 #include <cctype>
@@ -100,43 +101,6 @@ Trade ResultConversion(std::vector<std::string> item, tradeType Ttype) {
   return result;
 }
 
-void HandleTrades(std::vector<Trade> Trades) {
-  json orders =
-      CurlReq::q
-          .Add([] {
-            return CurlReq::__GET("https://api.warframe.market/v2/orders/my",
-                                  {"Content-Type: application/json",
-                                   "Accept: application/json",
-                                   "Authorization: Bearer " + VARS::JWT});
-          })
-          .get();
-  for (Trade &trade : Trades) {
-    switch (trade.Tstate) {
-    case VARS::tradeType::sell:
-      HandleSell(trade, orders);
-      break;
-    case VARS::tradeType::buy:
-      HandleBuy(trade, orders);
-      break;
-    }
-  }
-}
-
-void HandleSell(Trade &trade, json &orders) {
-  for (const auto &order : orders) {
-    if (order["id"] == trade.id) {
-    }
-  }
-}
-
-void HandleBuy(Trade &trade, json &orders) {
-  for (const auto &order : orders) {
-    if (order["id"] == trade.id) {
-      // exec
-    }
-  }
-}
-
 void EElogChecking() {
   std::ifstream EE("../../out.txt");
   EE.seekg(0, std::ios::beg);
@@ -210,6 +174,31 @@ void EElogChecking() {
     trade_type_swap:
     }
     CurlReq::wait();
+  }
+}
+
+void HandleTrade(Trade trd) {
+  json trades_remote =
+      CurlReq::q
+          .Add([] {
+            return CurlReq::__GET("https://api.warframe.market/v2/orders/my",
+                                  {"Content-Type: application/json",
+                                   "Accept: application/json",
+                                   "Authorization: Bearer " + VARS::JWT});
+          })
+          .get();
+
+  for (json const &order : trades_remote["data"]) {
+    if (order["itemId"] == trd.id) {
+      switch (trd.Tstate) {
+      case VARS::tradeType::buy:
+        DeleteOrder(order["id"]);
+        break;
+      case VARS::tradeType::sell:
+        break;
+      }
+      break;
+    }
   }
 }
 

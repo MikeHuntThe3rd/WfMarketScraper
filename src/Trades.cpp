@@ -5,7 +5,7 @@
 #include <optional>
 #include <vector>
 
-void Trades::Add(Trade trade) {
+void Trades::Add(Remotetrade trade) {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   Trades_inner.push_back(trade);
   cv.notify_one();
@@ -20,7 +20,7 @@ void Trades::Remove(std::string id) {
   cv.notify_one();
 }
 
-void Trades::Edit(std::string id, Trade trade) {
+void Trades::Edit(std::string id, Remotetrade trade) {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   auto iter = this->FindById(id);
   if (iter.has_value()) {
@@ -29,12 +29,12 @@ void Trades::Edit(std::string id, Trade trade) {
   cv.notify_one();
 }
 
-std::vector<VARS::Trade> Trades::Read() {
+std::vector<Remotetrade> Trades::Read() {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   return Trades_inner;
 }
 
-std::optional<std::vector<VARS::Trade>::iterator>
+std::optional<std::vector<Remotetrade>::iterator>
 Trades::FindById(std::string id) {
   auto find_iter =
       std::find_if(Trades_inner.begin(), Trades_inner.end(),
