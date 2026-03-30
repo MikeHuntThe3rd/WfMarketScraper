@@ -24,10 +24,9 @@ std::vector<std::string> SeperateBy(std::stringstream &SS, std::string &line,
 
 // trade manager functions
 void HandleNewTrade(Trade trd);
-void HandleTradeMove(vector<string> item, tradeType Ttype);
+void HandlelocalTrade(vector<string> item, tradeType trade_state);
 
 // generic functions
-Trade ResultConversion(std::vector<std::string> item, tradeType Ttype);
 std::string Implode(std::vector<std::string> array, char seperator);
 std::string GetIdFromSlug(std::string slug);
 void LowerCase(std::string &word);

@@ -4,6 +4,7 @@
 #include "VARS.hpp"
 #include <algorithm>
 #include <cctype>
+#include <cstdint>
 #include <ios>
 #include <iostream>
 #include <sstream>
@@ -45,18 +46,21 @@ void LowerCase(std::string &word) {
                  [](unsigned char ch) { return std::tolower(ch); });
 }
 
-Trade ResultConversion(std::vector<std::string> item, tradeType Ttype) {
-  int amount = 1, level = -1;
-  std::vector<std::string> data, name;
+void HandlelocalTrade(vector<string> item, tradeType trade_state) {
+  std::vector<std::string> name, data;
 
   // get the name parts of the item
   for (int i = 0; i < item.size(); i++) {
     if (item[i] == "Platinum") {
-      amount = stoi(item[i + 2]);
-      auto trade =
-          Trade{"Platinum", "plat", amount, amount, itemType::platinum, Ttype};
-      trade.amount = amount;
-      return trade;
+
+      uint32_t pl_amount = static_cast<uint32_t>(stoi(item[i + 2]));
+      switch (trade_state) {
+      case VARS::tradeType::sell:
+        VARS::platinum -= pl_amount;
+      case VARS::tradeType::buy:
+        VARS::platinum += pl_amount;
+      }
+      return;
     }
     if (item[i] != "x" && item[i].find("(") == std::string::npos) {
       LowerCase(item[i]);
@@ -67,6 +71,7 @@ Trade ResultConversion(std::vector<std::string> item, tradeType Ttype) {
     }
   }
 
+  int amount, level;
   for (int i = 0; i < data.size(); i++) {
     if (data[i] == "x") {
       amount = std::stoi(data[i + 1]);
@@ -77,11 +82,36 @@ Trade ResultConversion(std::vector<std::string> item, tradeType Ttype) {
       break;
     }
   }
+
   string slug = OrderHandling::Implode(name, '_');
-  auto result = Trade{slug, OrderHandling::GetIdFromSlug(slug), 0,
-                      0,    Trds::GetITypeFromSlug(slug),       Ttype};
-  result.amount = amount;
-  return result;
+  for (const auto &order : Trds::trades.Read()) {
+    if (order.second.slug == slug && order.second.Tstate == trade_state) {
+      switch (trade_state) {
+      case VARS::tradeType::sell: {
+        cout << "deleting: " << slug << endl;
+
+        DeleteOrder(order.first);
+        Trds::trades.Remove(order.first);
+        return;
+      }
+      case VARS::tradeType::buy: {
+        cout << "updating: " << slug << endl;
+
+        auto updated_trd = order.second;
+        updated_trd.Tstate = VARS::tradeType::sell;
+        json post_status = OrderHandling::PostOrder(updated_trd);
+        if (!post_status.empty() && post_status["error"] == nullptr) {
+          OrderHandling::DeleteOrder(order.first);
+          Trds::trades.Set(order.first, updated_trd);
+        } else {
+          cout << "update failed" << endl;
+        }
+        return;
+      }
+      }
+    } else {
+    }
+  }
 }
 
 void EElogChecking() {
@@ -137,18 +167,23 @@ void EElogChecking() {
       // output
       if (line.find("description=The trade was successful!") !=
           std::string::npos) {
-        std::vector<Trade> Trades;
+        Trds::trades.Sync(CurlReq::q
+                              .Add([] {
+                                return CurlReq::__GET(
+                                    "https://api.warframe.market/v2/orders/my",
+                                    {"Content-Type: application/json",
+                                     "Accept: application/json",
+                                     "Authorization: Bearer " + VARS::JWT});
+                              })
+                              .get());
 
         for (auto const &curr : soldItems) {
-          Trades.push_back(ResultConversion(curr, tradeType::sell));
+          HandlelocalTrade(curr, tradeType::sell);
         }
         for (auto const &curr : boughtItems) {
-          Trades.push_back(ResultConversion(curr, tradeType::buy));
+          HandlelocalTrade(curr, tradeType::buy);
         }
 
-        for (const auto &curr : Trades) {
-          std::cout << curr.slug << std::endl;
-        }
         // data resetting
         CheckUnlocked = {false, VARS::tradeType::sell};
         soldItems.clear();

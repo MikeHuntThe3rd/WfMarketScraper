@@ -1,11 +1,11 @@
 #pragma once
+#include <cstdint>
 #include <optional>
 #ifdef _WIN32
 #define NOMINMAX
 #endif
 
 #include "json.hpp"
-#include <any>
 #include <atomic>
 #include <future>
 #include <limits>
@@ -20,6 +20,7 @@ namespace VARS {
 // global generics
 inline json items;
 inline std::string JWT = "";
+inline uint32_t platinum = 0;
 // atomics
 inline std::atomic<bool> LogLoop{true};
 // enums

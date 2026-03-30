@@ -2,7 +2,7 @@
 #include "VARS.hpp"
 #include <mutex>
 
-VARS::itemType GetITypeFromSlug(std::string slug) {
+VARS::itemType Trds::GetITypeFromSlug(std::string slug) {
   for (const auto &curr : items["data"]) {
     if (curr["slug"] == slug) {
       std::vector<std::string> tags = curr["tags"];
@@ -50,24 +50,32 @@ void Trds::Trades::Set(string id, Trade trd) {
   cv.notify_one();
 }
 
+string Trds::Trades::GetSlugFromId(string id) {
+  for (const json &curr : items["data"]) {
+    if (curr["id"] == id)
+      return curr["slug"];
+  }
+  return "0";
+}
+
 void Trds::Trades::Sync(json orders_my) {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   for (const json &order : orders_my["data"]) {
     if (Trades_inner.find(order["id"]) == Trades_inner.end()) {
 
       string slug = GetSlugFromId(order["itemId"]);
-      VARS::itemType type = GetITypeFromSlug(slug);
+      VARS::itemType i_type = Trds::GetITypeFromSlug(slug);
       VARS::tradeType t_type = (order["type"] == "buy") ? VARS::tradeType::buy
                                                         : VARS::tradeType::sell;
       auto trd = Trade{slug,
                        order["itemId"],
                        order["platinum"],
                        order["platinum"],
-                       type,
+                       i_type,
                        t_type,
                        true};
 
-      switch (type) {
+      switch (i_type) {
       case VARS::itemType::basic:
         Trades_inner.insert({order["id"], trd});
         break;
