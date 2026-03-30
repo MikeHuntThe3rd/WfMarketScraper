@@ -54,6 +54,7 @@ struct Trade {
   int buy, sell;
   itemType Itype;
   tradeType Tstate;
+  bool is_user_trade;
   optional<int> level = nullopt, cyanStar = nullopt, amberStar = nullopt;
   int amount = 1;
 };

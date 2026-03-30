@@ -2,7 +2,7 @@
 #include "VARS.hpp"
 #include <mutex>
 
-void Trades::Add(string id, Trade trd) {
+void Trds::Trades::Add(string id, Trade trd) {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   auto iter = Trades_inner.find(id);
   if (iter == Trades_inner.end())
@@ -10,7 +10,7 @@ void Trades::Add(string id, Trade trd) {
   cv.notify_one();
 }
 
-void Trades::Remove(std::string id) {
+void Trds::Trades::Remove(std::string id) {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   auto iter = Trades_inner.find(id);
   if (iter != Trades_inner.end())
@@ -18,7 +18,25 @@ void Trades::Remove(std::string id) {
   cv.notify_one();
 }
 
-unordered_map<string, Trade> Trades::Read() {
+void Trds::Trades::Set(string id, Trade trd) {
+  std::lock_guard<std::mutex> lock(thread_lock_key);
+  auto iter = Trades_inner.find(id);
+  if (iter != Trades_inner.end())
+    iter->second = trd;
+  cv.notify_one();
+}
+
+void Trds::Trades::Sync(json orders_my) {
+  std::lock_guard<std::mutex> lock(thread_lock_key);
+  for (const json &order : orders_my["data"]) {
+    if (Trades_inner.find(order["id"]) == Trades_inner.end()) {
+      Trades_inner.insert({order["id"], Trade{}});
+    }
+  }
+  cv.notify_one();
+}
+
+unordered_map<string, Trade> Trds::Trades::Read() {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   return Trades_inner;
 }

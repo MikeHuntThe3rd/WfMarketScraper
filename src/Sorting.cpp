@@ -110,7 +110,7 @@ std::optional<Trade> RankBasedMargin(json orders) {
     return Trade{slug,          OrderHandling::GetIdFromSlug(slug),
                  best.buy,      best.sell,
                  itemType::mod, tradeType::buy,
-                 best.level};
+                 false,         best.level};
   } else {
     return std::nullopt;
   }
@@ -140,7 +140,8 @@ std::optional<Trade> BasicMargin(json orders) {
                  buy,
                  sell,
                  itemType::basic,
-                 tradeType::buy};
+                 tradeType::buy,
+                 false};
   } else {
     return std::nullopt;
   }

@@ -13,17 +13,18 @@ using json = nlohmann::json;
 
 namespace OrderHandling {
 
-// Major functions
+// Major functions(should be in its own thread)
 void EElogChecking();
 // Helper functions
 json PostOrder(Trade trd);
 json DeleteOrder(std::string id = "");
-json UpdateOrder(Trade trd);
+json UpdateOrder(string trade_id, Trade trd);
 std::vector<std::string> SeperateBy(std::stringstream &SS, std::string &line,
                                     char separator);
 
 // trade manager functions
-void HandleTrade(Trade trd);
+void HandleNewTrade(Trade trd);
+void HandleTradeMove(vector<string> item, tradeType Ttype);
 
 // generic functions
 Trade ResultConversion(std::vector<std::string> item, tradeType Ttype);

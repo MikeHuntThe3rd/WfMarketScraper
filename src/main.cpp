@@ -78,7 +78,7 @@ void WebLoop() {
       auto trade = Sorting::ValidTrade(item["slug"], item["tags"],
                                        VARS::Settings["-l"] != 0);
       if (trade.has_value())
-        OrderHandling::HandleTrade(trade.value());
+        OrderHandling::HandleNewTrade(trade.value());
     }
   }
   CurlReq::disconnect();

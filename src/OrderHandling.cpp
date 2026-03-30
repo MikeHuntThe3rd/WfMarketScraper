@@ -11,7 +11,6 @@
 #include <vector>
 
 namespace OrderHandling {
-// generic
 std::vector<std::string> SeperateBy(std::stringstream &SS, std::string &line,
                                     char separator) {
   std::vector<std::string> result;
@@ -177,7 +176,7 @@ void EElogChecking() {
   }
 }
 
-void HandleTrade(Trade trd) {
+void HandleNewTrade(Trade trd) {
   json trades_remote =
       CurlReq::q
           .Add([] {
@@ -187,31 +186,26 @@ void HandleTrade(Trade trd) {
                                    "Authorization: Bearer " + VARS::JWT});
           })
           .get();
-  auto map = trades.Read();
+  auto map = Trds::trades.Read();
 
   for (json const &order : trades_remote["data"]) {
     if (map.find(order["id"]) != map.end() &&
         map.find(order["id"])->second.slug == trd.slug) {
       cout << "updating: " << trd.slug << endl;
 
-      json del_status = OrderHandling::DeleteOrder(order["id"]);
-      if (!del_status.empty() && del_status["error"] == nullptr)
-        trades.Remove(del_status["data"]["id"]);
+      json update_status = OrderHandling::UpdateOrder(order["id"], trd);
+      if (!update_status.empty() && update_status["error"] == nullptr)
+        Trds::trades.Set(order["id"], trd);
       else {
-        cout << "removal failed!" << endl;
+        cout << "update failed" << endl;
         return;
       }
-
-      json post_status = OrderHandling::PostOrder(trd);
-      if (!post_status.empty() && post_status["error"] == nullptr)
-        trades.Add(post_status["data"]["id"], trd);
-      return;
     }
   }
 
   json post_status = OrderHandling::PostOrder(trd);
   if (!post_status.empty() && post_status["error"] == nullptr)
-    trades.Add(post_status["data"]["id"], trd);
+    Trds::trades.Add(post_status["data"]["id"], trd);
 }
 
 json DeleteOrder(std::string id) {
@@ -242,7 +236,7 @@ json DeleteOrder(std::string id) {
   }
 }
 
-json UpdateOrder(Trade trd) {
+json UpdateOrder(string trade_id, Trade trd) {
   json j;
   j["quantity"] = 1;
   j["visible"] = false;
@@ -270,10 +264,10 @@ json UpdateOrder(Trade trd) {
   default:
     return json{};
   }
-  string id = trd.id;
   return CurlReq::q
-      .Add([id, j] {
-        return __PATCH("https://api.warframe.market/v2/order/" + id, j.dump());
+      .Add([trade_id, j] {
+        return __PATCH("https://api.warframe.market/v2/order/" + trade_id,
+                       j.dump());
       })
       .get();
 }
