@@ -30,6 +30,5 @@ void HandleTradeMove(vector<string> item, tradeType Ttype);
 Trade ResultConversion(std::vector<std::string> item, tradeType Ttype);
 std::string Implode(std::vector<std::string> array, char seperator);
 std::string GetIdFromSlug(std::string slug);
-VARS::itemType GetITypeFromSlug(std::string slug);
 void LowerCase(std::string &word);
 } // namespace OrderHandling

@@ -55,8 +55,14 @@ struct Trade {
   itemType Itype;
   tradeType Tstate;
   bool is_user_trade;
-  optional<int> level = nullopt, cyanStar = nullopt, amberStar = nullopt;
+  std::optional<int> level = std::nullopt, cyanStar = std::nullopt,
+                     amberStar = std::nullopt;
   int amount = 1;
+
+  Trade(std::string slug, std::string id, int buy, int sell, itemType itype,
+        tradeType ttype, bool is_user_trade)
+      : slug(slug), id(id), buy(buy), sell(sell), Itype(itype), Tstate(ttype),
+        is_user_trade(is_user_trade) {}
 };
 
 struct Task {

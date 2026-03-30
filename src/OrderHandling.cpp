@@ -31,22 +31,6 @@ std::string Implode(std::vector<std::string> array, char seperator) {
   return result;
 }
 
-VARS::itemType GetITypeFromSlug(std::string slug) {
-  for (const auto &curr : items["data"]) {
-    if (curr["slug"] == slug) {
-      std::vector<std::string> tags = curr["tags"];
-
-      if (std::find(tags.begin(), tags.end(), "mod") != tags.end() &&
-          std::find(tags.begin(), tags.end(), "veiled_riven") == tags.end()) {
-        return VARS::itemType::mod;
-      } else {
-        return VARS::itemType::basic;
-      }
-    }
-  }
-  return VARS::itemType::Ayatan;
-}
-
 std::string GetIdFromSlug(std::string slug) {
   for (const json &curr : items["data"]) {
     if (curr["slug"] == slug)
@@ -94,8 +78,8 @@ Trade ResultConversion(std::vector<std::string> item, tradeType Ttype) {
     }
   }
   string slug = OrderHandling::Implode(name, '_');
-  auto result = Trade{slug, OrderHandling::GetIdFromSlug(slug),    0,
-                      0,    OrderHandling::GetITypeFromSlug(slug), Ttype};
+  auto result = Trade{slug, OrderHandling::GetIdFromSlug(slug), 0,
+                      0,    Trds::GetITypeFromSlug(slug),       Ttype};
   result.amount = amount;
   return result;
 }
@@ -186,6 +170,7 @@ void HandleNewTrade(Trade trd) {
                                    "Authorization: Bearer " + VARS::JWT});
           })
           .get();
+  Trds::trades.Sync(trades_remote);
   auto map = Trds::trades.Read();
 
   for (json const &order : trades_remote["data"]) {
