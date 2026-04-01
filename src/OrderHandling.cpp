@@ -2,8 +2,6 @@
 #include "CurlReq.hpp"
 #include "Trades.hpp"
 #include "VARS.hpp"
-#include <algorithm>
-#include <cctype>
 #include <cstdint>
 #include <ios>
 #include <iostream>
@@ -19,31 +17,6 @@ std::vector<std::string> SeperateBy(std::stringstream &SS, std::string &line,
     result.push_back(line);
   }
   return result;
-}
-
-std::string Implode(std::vector<std::string> array, char seperator) {
-  std::string result = "";
-  for (int i = 0; i < array.size(); i++) {
-    if (i + 1 == array.size())
-      result += array[i];
-    else
-      result += array[i] + seperator;
-  }
-  return result;
-}
-
-std::string GetIdFromSlug(std::string slug) {
-  for (const json &curr : items["data"]) {
-    if (curr["slug"] == slug)
-      return curr["id"];
-  }
-  std::cout << "clouldnt find id for: " << "|" << slug << "|" << std::endl;
-  return "0";
-}
-
-void LowerCase(std::string &word) {
-  std::transform(word.begin(), word.end(), word.begin(),
-                 [](unsigned char ch) { return std::tolower(ch); });
 }
 
 void HandlelocalTrade(vector<string> item, tradeType trade_state) {
@@ -83,7 +56,7 @@ void HandlelocalTrade(vector<string> item, tradeType trade_state) {
     }
   }
 
-  string slug = OrderHandling::Implode(name, '_');
+  string slug = Implode(name, '_');
   for (const auto &order : Trds::trades.Read()) {
     if (order.second.slug == slug && order.second.Tstate == trade_state) {
       switch (trade_state) {
@@ -116,7 +89,7 @@ void HandlelocalTrade(vector<string> item, tradeType trade_state) {
 
 void EElogChecking() {
   std::ifstream EE("../../out.txt");
-  EE.seekg(0, std::ios::beg);
+  EE.seekg(0, std::ios::end);
   std::string line;
   std::vector<std::vector<std::string>> soldItems, boughtItems;
   while (VARS::LogLoop) {

@@ -1,6 +1,7 @@
 #pragma once
 #include "CurlReq.hpp"
 #include "OrderHandling.hpp"
+#include "StringOps.hpp"
 #include "VARS.hpp"
 #include "json.hpp"
 #include <fstream>

@@ -1,5 +1,6 @@
 #pragma once
 #include "CurlReq.hpp"
+#include "StringOps.hpp"
 #include "VARS.hpp"
 #include "json.hpp"
 #include <sstream>
@@ -7,6 +8,7 @@
 #include <vector>
 
 using namespace VARS;
+using namespace StringOps;
 using namespace CurlReq;
 using namespace std;
 using json = nlohmann::json;
@@ -26,8 +28,4 @@ std::vector<std::string> SeperateBy(std::stringstream &SS, std::string &line,
 void HandleNewTrade(Trade trd);
 void HandlelocalTrade(vector<string> item, tradeType trade_state);
 
-// generic functions
-std::string Implode(std::vector<std::string> array, char seperator);
-std::string GetIdFromSlug(std::string slug);
-void LowerCase(std::string &word);
 } // namespace OrderHandling

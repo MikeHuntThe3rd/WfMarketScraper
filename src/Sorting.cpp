@@ -107,7 +107,7 @@ std::optional<Trade> RankBasedMargin(json orders) {
 
   if (value_found && margin > VARS::Settings["-m"] &&
       Frequency(itemType::mod, best.level)) {
-    auto trd = Trade{slug,          OrderHandling::GetIdFromSlug(slug),
+    auto trd = Trade{slug,          StringOps::GetIdFromSlug(slug),
                      best.buy,      best.sell,
                      itemType::mod, tradeType::buy,
                      false};
@@ -138,7 +138,7 @@ std::optional<Trade> BasicMargin(json orders) {
   if ((sell_trade && buy_trade) && sell - buy > VARS::Settings["-m"] &&
       Frequency(itemType::basic)) {
     return Trade{slug,
-                 OrderHandling::GetIdFromSlug(slug),
+                 StringOps::GetIdFromSlug(slug),
                  buy,
                  sell,
                  itemType::basic,

@@ -2,30 +2,6 @@
 #include "VARS.hpp"
 #include <mutex>
 
-VARS::itemType Trds::GetITypeFromSlug(std::string slug) {
-  for (const auto &curr : items["data"]) {
-    if (curr["slug"] == slug) {
-      std::vector<std::string> tags = curr["tags"];
-
-      if (std::find(tags.begin(), tags.end(), "mod") != tags.end() &&
-          std::find(tags.begin(), tags.end(), "veiled_riven") == tags.end()) {
-        return VARS::itemType::mod;
-      } else {
-        return VARS::itemType::basic;
-      }
-    }
-  }
-  return VARS::itemType::Ayatan;
-}
-
-string GetSlugFromId(string id) {
-  for (const json &curr : items["data"]) {
-    if (curr["id"] == id)
-      return curr["slug"];
-  }
-  return "0";
-}
-
 void Trds::Trades::Add(string id, Trade trd) {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   auto iter = Trades_inner.find(id);
@@ -50,21 +26,13 @@ void Trds::Trades::Set(string id, Trade trd) {
   cv.notify_one();
 }
 
-string Trds::Trades::GetSlugFromId(string id) {
-  for (const json &curr : items["data"]) {
-    if (curr["id"] == id)
-      return curr["slug"];
-  }
-  return "0";
-}
-
 void Trds::Trades::Sync(json orders_my) {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   for (const json &order : orders_my["data"]) {
     if (Trades_inner.find(order["id"]) == Trades_inner.end()) {
 
       string slug = GetSlugFromId(order["itemId"]);
-      VARS::itemType i_type = Trds::GetITypeFromSlug(slug);
+      VARS::itemType i_type = GetITypeFromSlug(slug);
       VARS::tradeType t_type = (order["type"] == "buy") ? VARS::tradeType::buy
                                                         : VARS::tradeType::sell;
       auto trd = Trade{slug,

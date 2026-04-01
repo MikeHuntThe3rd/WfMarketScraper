@@ -1,4 +1,5 @@
 #pragma once
+#include "StringOps.hpp"
 #include "VARS.hpp"
 #include "json.hpp"
 #include <string>
@@ -6,11 +7,10 @@
 
 using namespace VARS;
 using namespace std;
+using namespace StringOps;
 using json = nlohmann::json;
 
 namespace Trds {
-
-VARS::itemType GetITypeFromSlug(std::string slug);
 
 class Trades {
 public:
@@ -24,8 +24,6 @@ private:
   unordered_map<string, Trade> Trades_inner;
   std::mutex thread_lock_key;
   std::condition_variable cv;
-
-  string GetSlugFromId(string id);
 };
 
 inline Trades trades{};
