@@ -7582,22 +7582,3 @@ OnUploadChallengeProgressResults:mRecentSeasonChallengeCompletions = 0, mRecentC
 535.801 Net [Info]: NAT bound for server to 84.236.56.217:4950
 551.924 Net [Info]: IRC out: PONG  :i5.local
 552.475 Net [Info]: NAT bound for client to 84.236.56.217:4955
-308.795 Script [Info]: Dialog.lua: Dialog::CreateOkCancel(description=Are you sure you want to accept this trade? You are offering:
-
-Platinum x 6
-
-Ayatan Anasa Sculpture
-
-Afuris Prime Barrel
-
-Afuris Prime Barrel
-
-
-
-and will receive from ShadowHUN1 the following:
-
-Suppress (COMMON RANK 0)
-
-Suppress (COMMON RANK 1)
-
-Suppress (COMMON RANK 3), leftItem=/Menu/Confirm_Item_Ok, rightItem=/Menu/Confirm_Item_Cancel)

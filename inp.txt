@@ -1,0 +1,30 @@
+308.795 Script [Info]: Dialog.lua: Dialog::CreateOkCancel(description=Are you sure you want to accept this trade? You are offering:
+
+Platinum x 6
+
+Ayatan Anasa Sculpture
+
+Afuris Prime Barrel
+
+Afuris Prime Barrel
+
+
+
+and will receive from ShadowHUN1 the following:
+
+Suppress (COMMON RANK 0)
+
+Suppress (COMMON RANK 1)
+
+Suppress (COMMON RANK 3), leftItem=/Menu/Confirm_Item_Ok, rightItem=/Menu/Confirm_Item_Cancel)
+308.845 Net [Info]: NAT bound for client to 84.236.56.217:4955
+310.168 Net [Info]: NAT bound for server to 84.236.56.217:4950
+312.273 Script [Info]: Dialog.lua: SendResult_MENU_SELECT()
+312.273 Script [Info]: Dialog.lua: Dialog::SendResult(4)
+312.558 Sys [Info]: Spot-loading /Lotus/Scripts/Challenges/VehicleKill.lua during batch loading!
+312.564 Sys [Info]: Spot-loading took 6.06ms
+312.564 Sys [Info]: Spot-loading /Lotus/Scripts/Challenges/MountedKill.lua during batch loading!
+312.568 Sys [Info]: Spot-loading /Lotus/Scripts/Challenges/TimedTagAccumulation.lua during batch loading!
+312.574 Sys [Info]: Spot-loading took 5.96ms
+313.111 Sys [Info]: Created /Lotus/Interface/Dialog.swf
+313.111 Script [Info]: Dialog.lua: Dialog::CreateOk(description=The trade was successful!, leftItem=/Menu/Confirm_Item_Ok)

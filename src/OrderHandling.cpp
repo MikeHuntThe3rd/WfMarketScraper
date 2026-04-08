@@ -3,6 +3,7 @@
 #include "Trades.hpp"
 #include "VARS.hpp"
 #include <cstdint>
+#include <fstream>
 #include <ios>
 #include <iostream>
 #include <sstream>
@@ -92,14 +93,21 @@ void EElogChecking() {
   EE.seekg(0, std::ios::end);
   std::string line;
   std::vector<std::vector<std::string>> soldItems, boughtItems;
+
+  // test append
+  // ofstream fil("../../out.txt", ios::app);
+  // fil << ifstream("../../inp.txt").rdbuf();
+  // fil.close();
+
   while (VARS::LogLoop) {
     // ifstream
     EE.clear();
     // variables
     std::pair<bool, VARS::tradeType> CheckUnlocked = {false,
                                                       VARS::tradeType::sell};
+
     // file check by lines
-    while (std::getline(EE, line)) {
+    while (getline(EE, line)) {
       // line data gathering
       std::string element = "";
       std::stringstream space{line}, comma{line};
@@ -162,7 +170,7 @@ void EElogChecking() {
         soldItems.clear();
         boughtItems.clear();
       }
-    trade_type_swap:
+    trade_type_swap:;
     }
     CurlReq::wait();
   }
