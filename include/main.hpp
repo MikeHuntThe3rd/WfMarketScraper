@@ -2,6 +2,7 @@
 #include "CurlReq.hpp"
 #include "OrderHandling.hpp"
 #include "Sorting.hpp"
+#include "CLI11.hpp"
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -18,11 +19,8 @@ struct MapElement {
   int value;
 };
 
-vector<string> ParseArgv(int argc, char *argv[]);
-void ChangeSettings(optional<MapElement> change = nullopt);
 void CreateSettings();
-void SettingsSetup();
+void LoadSettings();
 void WebLoop();
 void Set(vector<string> args);
-void Run(vector<string> args);
-void CommandDispatch(vector<string> args);
+void Run(CLI::App* run, optional<string> jwt);

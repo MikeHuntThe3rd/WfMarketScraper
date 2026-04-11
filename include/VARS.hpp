@@ -18,31 +18,35 @@ using json = nlohmann::json;
 using namespace std;
 
 namespace VARS {
-// global generics
-inline json items;
-inline std::string JWT = "";
-inline uint32_t platinum = 0;
 // atomics
-inline std::atomic<bool> LogLoop{true};
+inline std::atomic<bool> thread_run{true};
 // enums
 enum class itemType { basic, mod, Ayatan, platinum };
 enum class tradeType { buy, sell };
 enum class command { run, set };
-// sets
-inline std::unordered_set<std::string> RunModes = {"-w", "-d", "-l"};
-// maps
-inline std::unordered_map<std::string, int> Settings = {
-    {"-m", 10}, {"-f", 96}, {"-l", 0}, {"-v", 0}};
 // structs
-struct rank // stats for a mod at a certain level (only different mod ranks are
-            // saved)
+struct costum_exit {
+  int code;
+  string msg;
+
+  costum_exit(int code, string msg) : code(code), msg(msg) {}
+};
+struct Settings_template {
+    int margin;
+    int frequency;
+    bool log;
+    bool visible_trade;
+    bool delete_on_start;
+    string JWT;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Settings_template, margin, frequency, log, visible_trade, delete_on_start, JWT)
+struct rank // stats for a mod at a certain level (only different mod ranks are saved)
 {
   int level, sell = std::numeric_limits<int>::max(),
              buy = std::numeric_limits<int>::min();
   bool sell_trade = false, buy_trade = false;
 };
-struct ayatan_sculpture // stats for an ayatan_sculpture (every iteration is
-                        // saved)
+struct ayatan_sculpture // stats for an ayatan_sculpture (every iteration is saved)
 {
   int cyanStars, amberStars, buy = std::numeric_limits<int>::min(),
                              sell = std::numeric_limits<int>::max();
@@ -66,9 +70,21 @@ struct Trade {
       : slug(slug), id(id), buy(buy), sell(sell), Itype(itype), Tstate(ttype),
         is_user_trade(is_user_trade) {}
 };
-
 struct Task {
   std::function<json()> work;
   std::promise<json> promise;
 };
+// global generics
+inline json items;
+inline std::string JWT = "";
+inline uint32_t platinum = 0;
+inline const json DefSettings{
+  {"margin", 10},
+  {"frequency", 96},
+  {"log", false},
+  {"visible_trade", false},
+  {"delete_on_start", false},
+  {"JWT", ""}
+};
+inline Settings_template Settings;
 } // namespace VARS

@@ -50,14 +50,13 @@ json __GET(std::string https, std::vector<std::string> headers) {
     std::cout << "no result" << std::endl;
     return json{};
   } else {
-    // std::cout << interval.count() << endl;
     try {
       json data = json::parse(response_string);
-      // js << data.dump(4);
       response_string.clear();
       return data;
     } catch (nlohmann::json::parse_error &err) {
       std::cout << err.what();
+      return json{};
     }
   }
 }
@@ -134,15 +133,21 @@ json __PATCH(std::string https, std::string body) {
     return result;
   }
 }
+
 // queuing
 Queuing::Queuing() {
   worker = std::thread([this] { QueueUnloading(); });
 }
+Queuing::~Queuing() {
+  VARS::thread_run = false;
+  cv.notify_one();
+  worker.join();
+}
 void Queuing::QueueUnloading() {
   VARS::Task task;
-  while (true) {
+  while (VARS::thread_run) {
     std::unique_lock<std::mutex> lock(thread_lock);
-    cv.wait(lock, [&] { return !tasks.empty(); });
+    cv.wait(lock, [&] { return !tasks.empty() || !VARS::thread_run; });
     task = std::move(tasks.front());
     tasks.pop();
     cv.notify_all();

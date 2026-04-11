@@ -36,6 +36,7 @@ json __PATCH(std::string https, std::string body);
 class Queuing {
 public:
   Queuing();
+  ~Queuing();
   std::future<json> Add(std::function<json()> f);
   void WaitUntilQueueEmpty();
 

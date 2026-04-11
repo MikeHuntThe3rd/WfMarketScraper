@@ -99,7 +99,7 @@ void EElogChecking() {
   // fil << ifstream("../../inp.txt").rdbuf();
   // fil.close();
 
-  while (VARS::LogLoop) {
+  while (VARS::thread_run) {
     // ifstream
     EE.clear();
     // variables

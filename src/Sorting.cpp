@@ -49,7 +49,7 @@ bool Frequency(itemType type, std::optional<std::any> data) {
     break;
   }
 
-  if (vol > VARS::Settings["-f"]) {
+  if (vol > VARS::Settings.frequency) {
     return true;
   } else {
     return false;
@@ -105,7 +105,7 @@ std::optional<Trade> RankBasedMargin(json orders) {
   } else
     logfile << "no good mod trade found: " << std::endl;
 
-  if (value_found && margin > VARS::Settings["-m"] &&
+  if (value_found && margin > VARS::Settings.margin &&
       Frequency(itemType::mod, best.level)) {
     auto trd = Trade{slug,          StringOps::GetIdFromSlug(slug),
                      best.buy,      best.sell,
@@ -135,7 +135,7 @@ std::optional<Trade> BasicMargin(json orders) {
     }
   }
   logfile << "margin: " << sell - buy << std::endl;
-  if ((sell_trade && buy_trade) && sell - buy > VARS::Settings["-m"] &&
+  if ((sell_trade && buy_trade) && sell - buy > VARS::Settings.margin &&
       Frequency(itemType::basic)) {
     return Trade{slug,
                  StringOps::GetIdFromSlug(slug),
@@ -231,7 +231,7 @@ std::optional<Trade> AyatanMargin(json orders) {
   else
     logfile << "best is empty" << std::endl;
 
-  if (best.has_value() && margin > VARS::Settings["-f"] &&
+  if (best.has_value() && margin > VARS::Settings.margin &&
       Frequency(itemType::Ayatan, best)) {
     return std::nullopt;
   } else {
