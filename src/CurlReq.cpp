@@ -1,4 +1,5 @@
 #include "CurlReq.hpp"
+#include "VARS.hpp"
 #include <iostream>
 #include <mutex>
 
@@ -145,7 +146,9 @@ Queuing::~Queuing() {
 }
 void Queuing::QueueUnloading() {
   VARS::Task task;
-  while (VARS::thread_run) {
+  while (true) {
+    if (VARS::thread_run)
+      break;
     std::unique_lock<std::mutex> lock(thread_lock);
     cv.wait(lock, [&] { return !tasks.empty() || !VARS::thread_run; });
     task = std::move(tasks.front());
