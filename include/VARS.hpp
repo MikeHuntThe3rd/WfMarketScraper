@@ -33,13 +33,13 @@ struct costum_exit {
 };
 struct Settings_template {
     int margin;
-    int frequency;
+    int freq;
     bool log;
-    bool visible_trade;
-    bool delete_on_start;
-    string JWT;
+    bool vt;
+    bool dos;
+    string jwt;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Settings_template, margin, frequency, log, visible_trade, delete_on_start, JWT)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Settings_template, margin, freq, log, vt, dos, jwt)
 struct rank // stats for a mod at a certain level (only different mod ranks are saved)
 {
   int level, sell = std::numeric_limits<int>::max(),
@@ -80,11 +80,11 @@ inline std::string JWT = "";
 inline uint32_t platinum = 0;
 inline const json DefSettings{
   {"margin", 10},
-  {"frequency", 96},
+  {"freq", 96},
   {"log", false},
-  {"visible_trade", false},
-  {"delete_on_start", false},
-  {"JWT", ""}
+  {"vt", false},
+  {"dos", false},
+  {"jwt", ""}
 };
 inline Settings_template Settings;
 } // namespace VARS

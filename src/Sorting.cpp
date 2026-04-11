@@ -49,7 +49,7 @@ bool Frequency(itemType type, std::optional<std::any> data) {
     break;
   }
 
-  if (vol > VARS::Settings.frequency) {
+  if (vol > VARS::Settings.freq) {
     return true;
   } else {
     return false;

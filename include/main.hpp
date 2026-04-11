@@ -14,6 +14,10 @@
 
 using namespace std;
 
+//this is commented out intentionally its only in the source
+// template<typename T>
+// void AddCommandTriage(CLI::App* set, string name, string help);
+
 void CreateSettings();
 void LoadSettings();
 void WebLoop();
