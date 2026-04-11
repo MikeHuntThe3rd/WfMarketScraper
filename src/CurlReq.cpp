@@ -147,10 +147,10 @@ Queuing::~Queuing() {
 void Queuing::QueueUnloading() {
   VARS::Task task;
   while (true) {
-    if (VARS::thread_run)
-      break;
     std::unique_lock<std::mutex> lock(thread_lock);
     cv.wait(lock, [&] { return !tasks.empty() || !VARS::thread_run; });
+    if (!VARS::thread_run)
+      return;
     task = std::move(tasks.front());
     tasks.pop();
     cv.notify_all();

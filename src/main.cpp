@@ -45,105 +45,46 @@ void WebLoop() {
   CurlReq::disconnect();
 }
 
-// void Set(vector<string> args) {
-//   if (args.size() > 4) {
-//     cout << "too many arguments given" << endl;
-//     return;
-//   }
-//   optional<string> mode =
-//       (args.size() >= 3) ? optional<string>{(string)args[2]}
-//                          : nullopt;
-//   if (mode.has_value()) {
-//     CreateSettings();
-//     auto setting = VARS::Settings.find(mode.value());
-//     int value;
-//     try {
-//       if (args.size() < 4) {
-//         cout << "no value given" << endl;
-//         return;
-//       }
-//       value = stoi(args[3]);
-//     } catch (exception e) {
-//       cout << "error: " << e.what() << endl;
-//       return;
-//     }
-//     if (setting != VARS::Settings.end()) {
-//       SettingsSetup();
-//       ChangeSettings(MapElement{setting->first, value});
-//       cout << "setting changed succesfully" << endl;
-//     } else {
-//       cout << "set mode not found" << endl;
-//       return;
-//     }
-
-//   } else {
-//     cout << "no set mode given" << endl;
-//   }
-// }
-
-// void Run(vector<string> args) {
-//   if (args.size() > 4) {
-//     cout << "too many arguments given" << endl;
-//     return;
-//   }
-//   if (args.size() == 4) {
-//     string mode = args[2];
-//     if (VARS::RunModes.find(mode) == VARS::RunModes.end()) {
-//       cout << "mode not recognized" << endl;
-//       return;
-//     }
-
-//     VARS::JWT = args[3];
-
-//     if (mode == "-w") {
-//       WebLoop();
-//     } else if (mode == "-d") {
-//       CurlReq::setup();
-//       OrderHandling::DeleteOrder();
-//       CurlReq::q.WaitUntilQueueEmpty();
-//       CurlReq::disconnect();
-//     } else if (mode == "-l") {
-//       CurlReq::setup();
-//       items =
-//           CurlReq::q
-//               .Add([] {
-//                 return
-//                 CurlReq::__GET("https://api.warframe.market/v2/items");
-//               })
-//               .get();
-//       OrderHandling::EElogChecking();
-//       CurlReq::disconnect();
-//     }
-//   }
-//   if (args.size() == 3) {
-//     if (VARS::RunModes.find(args[2]) != VARS::RunModes.end()) {
-//       cout << "invalid command. \nNOTE:all web operation require your jwt "
-//                    "token in the last argument"
-//                 << endl;
-//       return;
-//     }
-//     VARS::JWT = args[2];
-//     thread InGameTrades(OrderHandling::EElogChecking);
-//     WebLoop();
-//     InGameTrades.join();
-//   }
-// }
-
 void Run(CLI::App *run, optional<string> jwt) {
   CreateSettings();
   LoadSettings();
+  if (!jwt.has_value() && VARS::Settings.JWT.size() == 0)
+    throw VARS::costum_exit{1, "jwt isnt saved or given as a parameter"};
+  else if (jwt.has_value() && VARS::Settings.JWT.size() == 0){
+    cout << "using JWT from cli" << endl <<"JWT will not be saved anywhere" << endl;
+    VARS::JWT = jwt.value();
+  }
+  else
+    VARS::JWT = VARS::Settings.JWT;
 
   if (run->got_subcommand("web")) {
-    if (!jwt.has_value() && VARS::Settings.JWT.size() == 0)
-      throw VARS::costum_exit{1, "jwt isnt saved or given as a parameter"};
-    else if (jwt.has_value() && VARS::Settings.JWT.size() == 0)
-      VARS::JWT = jwt.value();
-    else
-      VARS::JWT = VARS::Settings.JWT;
-
     WebLoop();
-  } else
-    throw VARS::costum_exit{1, "i didnt write that yet nigga"};
+  } else if(run->got_subcommand("delete")){
+    CurlReq::setup();
+    OrderHandling::DeleteOrder();
+    CurlReq::q.WaitUntilQueueEmpty();
+    CurlReq::disconnect();
+  }else if(run->got_subcommand("local")){
+    CurlReq::setup();
+  cout << "hewwo" << endl;
+    items =
+        CurlReq::q
+            .Add([] {
+              return CurlReq::__GET("https://api.warframe.market/v2/items");
+            })
+            .get();
+  cout << "hewwo" << endl;
+    OrderHandling::EElogChecking();
+    CurlReq::disconnect();
+  }else{
+    std::thread InGameTrades(OrderHandling::EElogChecking);
+    WebLoop();
+    InGameTrades.join();
+  }
+}
+
+void Set(CLI::App* set){
+
 }
 
 int main(int argc, char *argv[]) {

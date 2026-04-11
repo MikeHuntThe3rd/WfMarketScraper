@@ -14,13 +14,8 @@
 
 using namespace std;
 
-struct MapElement {
-  std::string key;
-  int value;
-};
-
 void CreateSettings();
 void LoadSettings();
 void WebLoop();
-void Set(vector<string> args);
 void Run(CLI::App* run, optional<string> jwt);
+void Set(CLI::App* set);
