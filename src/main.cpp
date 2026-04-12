@@ -36,7 +36,7 @@ void AddCommandtriplex(CLI::App* set, string name, string help){
       ofstream set_file("settings.json", ios::trunc);
       set_file << setts.dump(4);
     }else if(val->has_value()){
-      cout << "setting: " << name << endl;
+      cout << "setting: " << name << " to: " << boolalpha << val->value() << noboolalpha << endl;
       setts[name] = val->value();
       ofstream set_file("settings.json", ios::trunc);
       set_file << setts.dump(4);
@@ -66,6 +66,7 @@ void WebLoop() {
   CurlReq::setup();
   ofstream del("out.log", ios::trunc);
   del.close();
+  if(VARS::Settings.dos) OrderHandling::DeleteOrder();
   items = CurlReq::q
               .Add([] {
                 return CurlReq::__GET("https://api.warframe.market/v2/items");
@@ -156,6 +157,9 @@ int main(int argc, char *argv[]) {
     AddCommandtriplex<bool>(set, "dos", "enable/disable deleting all sales at the start of a web operation");
     AddCommandtriplex<bool>(set, "vt", "enable/disable whether trades found are posted as visible or not");
 
+    app.add_option_function<int>("-v,--version", 
+      [](int useless){cout << "WfMarketScraper version 1.0.0" << endl;}, 
+      "Print the current version and exit")->expected(0)->type_name("");
     CLI11_PARSE(app, argc, argv)
 
     if (app.got_subcommand(run))

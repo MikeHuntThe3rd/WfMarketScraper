@@ -102,10 +102,6 @@ json __DELETE(std::string https) {
   } else if (response_string.length() == 0) {
     return json{};
   } else {
-    std::ofstream out("delete_response.json");
-    // json j = response_string;
-    // out << j.dump(4);
-    // out.close();
     json result = json::parse(response_string);
     response_string.clear();
     return result;
@@ -126,10 +122,6 @@ json __PATCH(std::string https, std::string body) {
     return json{};
   } else {
     json result = json::parse(response_string);
-    // std::ofstream out("patch_response.json");
-    // json j = response_string;
-    // out << j.dump(4);
-    // out.close();
     response_string.clear();
     return result;
   }

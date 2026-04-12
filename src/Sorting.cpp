@@ -117,7 +117,6 @@ std::optional<Trade> RankBasedMargin(json orders) {
     return std::nullopt;
   }
 }
-
 std::optional<Trade> BasicMargin(json orders) {
   int buy = std::numeric_limits<int>::min();
   int sell = std::numeric_limits<int>::max();

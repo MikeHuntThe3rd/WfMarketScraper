@@ -240,7 +240,7 @@ json DeleteOrder(std::string id) {
 json UpdateOrder(string trade_id, Trade trd) {
   json j;
   j["quantity"] = 1;
-  j["visible"] = false;
+  j["visible"] = VARS::Settings.vt;
 
   switch (trd.Itype) {
   case itemType::basic: {
@@ -278,7 +278,7 @@ json PostOrder(Trade trd) {
   j["itemId"] = trd.id;
   j["type"] = (trd.Tstate == tradeType::buy) ? "buy" : "sell";
   j["quantity"] = 1;
-  j["visible"] = false;
+  j["visible"] = VARS::Settings.vt;
   // j["perTrade"] = 1;
 
   switch (trd.Itype) {
