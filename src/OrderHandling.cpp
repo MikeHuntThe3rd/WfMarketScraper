@@ -11,15 +11,6 @@
 #include <vector>
 
 namespace OrderHandling {
-std::vector<std::string> SeperateBy(std::stringstream &SS, std::string &line,
-                                    char separator) {
-  std::vector<std::string> result;
-  while (std::getline(SS, line, separator)) {
-    result.push_back(line);
-  }
-  return result;
-}
-
 void HandlelocalTrade(vector<string> item, tradeType trade_state) {
   std::vector<std::string> name, data;
 
@@ -62,14 +53,14 @@ void HandlelocalTrade(vector<string> item, tradeType trade_state) {
     if (order.second.slug == slug && order.second.Tstate == trade_state) {
       switch (trade_state) {
       case VARS::tradeType::sell: {
-        cout << "deleting: " << slug << endl;
+        cout << "[Deleting] " << slug << endl;
 
         DeleteOrder(order.first);
         Trds::trades.Remove(order.first);
         return;
       }
       case VARS::tradeType::buy: {
-        cout << "updating: " << slug << endl;
+        cout << "[Updating] " << slug << endl;
 
         auto updated_trd = order.second;
         updated_trd.Tstate = VARS::tradeType::sell;
@@ -78,7 +69,7 @@ void HandlelocalTrade(vector<string> item, tradeType trade_state) {
           OrderHandling::DeleteOrder(order.first);
           Trds::trades.Set(order.first, updated_trd);
         } else {
-          cout << "update failed" << endl;
+          cout << "[Error] update failed" << endl;
         }
         return;
       }
@@ -113,8 +104,8 @@ void EElogChecking() {
       std::stringstream space{line}, comma{line};
       std::vector<std::string> spaceSeperated, commaSeperated;
 
-      spaceSeperated = OrderHandling::SeperateBy(space, element, ' ');
-      commaSeperated = OrderHandling::SeperateBy(comma, element, ',');
+      spaceSeperated = StringOps::SeperateBy(space, element, ' ');
+      commaSeperated = StringOps::SeperateBy(comma, element, ',');
 
       // logic
       if (line.find("and will receive from") != std::string::npos) {
@@ -127,7 +118,7 @@ void EElogChecking() {
         std::stringstream ss{*commaSeperated.begin()};
         std::string ln = "";
 
-        boughtItems.push_back(OrderHandling::SeperateBy(ss, ln, ' '));
+        boughtItems.push_back(StringOps::SeperateBy(ss, ln, ' '));
       }
 
       if (CheckUnlocked.first && line.length() > 0 &&
@@ -192,13 +183,13 @@ void HandleNewTrade(Trade trd) {
   for (json const &order : trades_remote["data"]) {
     if (map.find(order["id"]) != map.end() &&
         map.find(order["id"])->second.slug == trd.slug) {
-      cout << "updating: " << trd.slug << endl;
+      cout << "[Updating] " << trd.slug << endl;
 
       json update_status = OrderHandling::UpdateOrder(order["id"], trd);
       if (!update_status.empty() && update_status["error"] == nullptr)
         Trds::trades.Set(order["id"], trd);
       else {
-        cout << "update failed" << endl;
+        cout << "[Error] update failed" << endl;
         return;
       }
     }

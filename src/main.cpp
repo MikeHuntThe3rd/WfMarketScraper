@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     run->add_subcommand("delete", "deletes all trades");
     run->add_subcommand("local", "runs local file checking");
 
-    auto set = app.add_subcommand("set", "subcommand for manadging settings");
+    auto set = app.add_subcommand("set", "subcommand for managing settings");
 
     auto res_all = set->add_subcommand("reset_all", "resets all values to their default states");
     auto show_all = set->add_subcommand("show_all", "shows all values");

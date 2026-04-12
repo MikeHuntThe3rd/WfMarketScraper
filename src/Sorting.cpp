@@ -74,8 +74,8 @@ std::optional<Trade> RankBasedMargin(json orders) {
     try {
       key = curr["rank"];
     } catch (const nlohmann::json::exception &e) {
-      std::cout << e.what() << '\n';
-      return std::nullopt;
+      cout << "[Error] 'rank' variable not found for: " << slug << endl;
+      return nullopt;
     }
 
     if (curr["user"]["status"] == "ingame" &&
@@ -151,7 +151,7 @@ std::optional<Trade> AyatanMargin(json orders) {
   std::vector<ayatan_sculpture> sculptures;
 
   auto findElement = [&sculptures](int cyanStars, int amberStars) {
-    auto match = std::find_if(
+    auto match = find_if(
         sculptures.begin(), sculptures.end(),
         [&cyanStars, &amberStars](const ayatan_sculpture &sculpture) {
           return sculpture.cyanStars == cyanStars &&
@@ -161,33 +161,25 @@ std::optional<Trade> AyatanMargin(json orders) {
   };
   auto addIfNew = [&sculptures, findElement](int cyanStars, int amberStars) {
     if (findElement(cyanStars, amberStars) == sculptures.end()) {
-      logfile << "Added new vector element (stars: c, a): "
-              << cyanStars + " " + amberStars << std::endl;
       sculptures.push_back({cyanStars, amberStars});
     }
   };
   auto priceCompare = [&sculptures, findElement](int cyanStars, int amberStars,
-                                                 tradeType type, int value) {
+                                                 tradeType type, int platinum) {
     auto element = findElement(cyanStars, amberStars);
     if (element != sculptures.end()) {
       switch (type) {
       case tradeType::sell:
-        if (element->sell > value) {
-          element->sell = value;
+        if (element->sell > platinum) {
+          element->sell = platinum;
           element->sell_trade = true;
-          logfile << "Updated a vector element type sell (stars: c, a): "
-                  << cyanStars + " " + amberStars << std::endl;
         }
         break;
       case tradeType::buy:
-        if (element->buy < value) {
-          element->buy = value;
+        if (element->buy < platinum) {
+          element->buy = platinum;
           element->buy_trade = true;
-          logfile << "Updated a vector element type buy (stars: c, a): "
-                  << cyanStars + " " + amberStars << std::endl;
         }
-        break;
-      default:
         break;
       }
     }
@@ -197,12 +189,11 @@ std::optional<Trade> AyatanMargin(json orders) {
     int cyan = 0;
     int amber = 0;
     try {
+      amber = order["amberStars"];
       cyan = order["cyanStars"];
     } catch (...) {
-    }
-    try {
-      amber = order["amberStars"];
-    } catch (...) {
+      cout << "[Error] 'cyanStars' or 'amberStars' variable(s) not found" << endl;
+      continue;
     }
 
     addIfNew(cyan, amber);
@@ -211,24 +202,25 @@ std::optional<Trade> AyatanMargin(json orders) {
       priceCompare(cyan, amber, tradeType::sell, order["platinum"]);
     }
     if (order["user"]["status"] == "ingame" && order["type"] == "buy") {
-      priceCompare(cyan, amber, tradeType::sell, order["platinum"]);
+      priceCompare(cyan, amber, tradeType::buy, order["platinum"]);
     }
   }
 
-  int margin = std::numeric_limits<int>::min();
-  std::optional<ayatan_sculpture> best = std::nullopt;
+  int margin = numeric_limits<int>::min();
+  optional<ayatan_sculpture> best = nullopt;
   for (ayatan_sculpture SC : sculptures) {
     if ((SC.sell_trade && SC.buy_trade) && SC.sell - SC.buy > margin) {
       margin = SC.sell - SC.buy;
       best = SC;
     }
   }
-  logfile << "resulting margin: " << margin << std::endl;
+  logfile << "resulting margin: " << margin << endl;
+  logfile << "seperate sculptures: " << sculptures.size() << endl;
   if (best.has_value())
     logfile << "struct of the best sculpture (stars: c, a):"
-            << best->cyanStars + " " + best->amberStars << std::endl;
+            << best->cyanStars << ", " << best->amberStars << endl;
   else
-    logfile << "best is empty" << std::endl;
+    logfile << "best is empty" << endl;
 
   if (best.has_value() && margin > VARS::Settings.margin &&
       Frequency(itemType::Ayatan, best)) {
@@ -256,8 +248,8 @@ optional<Trade> ValidTrade(string item, vector<string> tags, bool log) {
 
     auto result = AyatanMargin(orders);
     if (result.has_value()) {
-      logfile << "AYATAN!!!!!!" << std::endl;
-      std::cout << "AYATAN!!!!!!" << std::endl;
+      logfile << "[Success] found good trade for: " << slug << std::endl;
+      cout << "[Success] found good trade for: " << slug << std::endl;
     }
     __return = result;
 
@@ -269,8 +261,8 @@ optional<Trade> ValidTrade(string item, vector<string> tags, bool log) {
 
     auto result = RankBasedMargin(orders);
     if (result.has_value()) {
-      logfile << "MOD!!!!!!" << std::endl;
-      std::cout << "MOD!!!!!!" << std::endl;
+      logfile << "[Success] found good trade for: " << slug << std::endl;
+      cout << "[Success] found good trade for: " << slug << std::endl;
     }
 
     __return = result;
@@ -280,8 +272,8 @@ optional<Trade> ValidTrade(string item, vector<string> tags, bool log) {
 
     auto result = BasicMargin(orders);
     if (result.has_value()) {
-      logfile << "BASIC!!!!!!" << std::endl;
-      std::cout << "BASIC!!!!!!" << std::endl;
+      logfile << "[Success] found good trade for: " << slug << std::endl;
+      cout << "[Success] found good trade for: " << slug << std::endl;
     }
     __return = result;
   }

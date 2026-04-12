@@ -51,6 +51,8 @@ struct ayatan_sculpture // stats for an ayatan_sculpture (every iteration is sav
   int cyanStars, amberStars, buy = std::numeric_limits<int>::min(),
                              sell = std::numeric_limits<int>::max();
   bool sell_trade = false, buy_trade = false;
+
+  ayatan_sculpture(int cyan, int amber) : cyanStars(cyan), amberStars(amber) {};
 };
 struct basic {
   int sell, buy;

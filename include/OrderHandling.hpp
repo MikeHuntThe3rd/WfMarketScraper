@@ -21,8 +21,6 @@ void EElogChecking();
 json PostOrder(Trade trd);
 json DeleteOrder(std::string id = "");
 json UpdateOrder(string trade_id, Trade trd);
-std::vector<std::string> SeperateBy(std::stringstream &SS, std::string &line,
-                                    char separator);
 
 // trade manager functions
 void HandleNewTrade(Trade trd);

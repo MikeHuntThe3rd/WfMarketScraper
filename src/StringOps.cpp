@@ -49,4 +49,13 @@ string GetSlugFromId(string id) {
   }
   return "0";
 }
+
+vector<string> SeperateBy(stringstream &SS, string &line,
+                                    char separator) {
+  vector<string> result;
+  while (getline(SS, line, separator)) {
+    result.push_back(line);
+  }
+  return result;
+}
 } // namespace StringOps

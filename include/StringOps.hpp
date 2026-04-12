@@ -13,6 +13,7 @@ namespace StringOps {
 string Implode(vector<string> array, char seperator);
 string GetSlugFromId(string id);
 string GetIdFromSlug(string slug);
+vector<string> SeperateBy(stringstream &SS, string &line, char separator);
 itemType GetITypeFromSlug(string slug);
 void LowerCase(std::string &word);
 
