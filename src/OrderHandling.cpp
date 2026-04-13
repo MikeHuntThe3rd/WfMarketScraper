@@ -30,6 +30,7 @@ void HandlelocalTrade(vector<string> item, tradeType trade_state) {
       current["plat"] = VARS::Settings.plat;
       ofstream of("settings.json", ios::trunc);
       of << current.dump(4);
+      cout << "[Attention] new balance is: " << VARS::Settings.plat << endl;
       return;
     }
     if (item[i] != "x" && item[i].find("(") == std::string::npos) {
@@ -198,12 +199,37 @@ void UpdateTrade_s(optional<Trade> trd) {
     return json{};
   };
 
-  for (json const &order : trades_remote["data"]) {
+  for (const json &order : trades_remote["data"]) {
     if (!trd.has_value() && map.find(order["id"]) != map.end()) {
-      auto remote_trade = map.find(order["id"]);
-      json item = FindItem(remote_trade->second.id);
+      Trade remote_trade = map.find(order["id"])->second;
+      json item = FindItem(remote_trade.id);
 
-      Sorting::ValidTrade(item["slug"], item["tags"], VARS::Settings.log);
+      auto validated_trade =
+          Sorting::ValidTrade(item["slug"], item["tags"], VARS::Settings.log);
+      if (!validated_trade.has_value() &&
+          remote_trade.Tstate == VARS::tradeType::buy) {
+        cout << "[Deleting] no good trade found for: " << remote_trade.slug
+             << endl;
+        OrderHandling::DeleteOrder(order["id"]);
+        continue;
+      }
+      if (validated_trade->buy < remote_trade.buy ||
+          validated_trade->sell > remote_trade.sell) {
+        remote_trade.buy = validated_trade->buy;
+        remote_trade.sell = validated_trade->sell;
+        cout << "[Updating] " << remote_trade.slug << endl;
+
+        json update_status =
+            OrderHandling::UpdateOrder(order["id"], remote_trade);
+
+        if (!update_status.empty() && update_status["error"] == nullptr)
+          Trds::trades.Set(order["id"], remote_trade);
+        else {
+          cout << "[Error] update failed" << endl;
+        }
+      } else {
+        cout << "unchanged: " << remote_trade.slug << endl;
+      }
     } else if (trd.has_value() && map.find(order["id"]) != map.end() &&
                map.find(order["id"])->second.slug == trd.value().slug) {
 
@@ -222,32 +248,7 @@ void UpdateTrade_s(optional<Trade> trd) {
 }
 
 void HandleNewTrade(Trade trd) {
-  json trades_remote =
-      CurlReq::q
-          .Add([] {
-            return CurlReq::__GET("https://api.warframe.market/v2/orders/my",
-                                  {"Content-Type: application/json",
-                                   "Accept: application/json",
-                                   "Authorization: Bearer " + VARS::JWT});
-          })
-          .get();
-  Trds::trades.Sync(trades_remote);
-  auto map = Trds::trades.Read();
-
-  for (json const &order : trades_remote["data"]) {
-    if (map.find(order["id"]) != map.end() &&
-        map.find(order["id"])->second.slug == trd.slug) {
-      cout << "[Updating] " << trd.slug << endl;
-
-      json update_status = OrderHandling::UpdateOrder(order["id"], trd);
-      if (!update_status.empty() && update_status["error"] == nullptr)
-        Trds::trades.Set(order["id"], trd);
-      else {
-        cout << "[Error] update failed" << endl;
-        return;
-      }
-    }
-  }
+  OrderHandling::UpdateTrade_s(trd);
 
   json post_status = OrderHandling::PostOrder(trd);
   if (!post_status.empty() && post_status["error"] == nullptr)

@@ -26,6 +26,6 @@ json UpdateOrder(string trade_id, Trade trd);
 // trade manager functions
 void HandleNewTrade(Trade trd);
 void HandlelocalTrade(vector<string> item, tradeType trade_state);
-void UpdateTrade_s(optional<Trade> trd);
+void UpdateTrade_s(optional<Trade> trd = nullopt);
 
 } // namespace OrderHandling
