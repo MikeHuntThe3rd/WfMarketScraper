@@ -17,14 +17,18 @@ void HandlelocalTrade(vector<string> item, tradeType trade_state) {
   // get the name parts of the item
   for (int i = 0; i < item.size(); i++) {
     if (item[i] == "Platinum") {
-
-      uint32_t pl_amount = static_cast<uint32_t>(stoi(item[i + 2]));
+      int pl_amount = static_cast<int>(stoi(item[i + 2]));
       switch (trade_state) {
       case VARS::tradeType::sell:
-        VARS::platinum -= pl_amount;
+        VARS::Settings.plat -= pl_amount;
       case VARS::tradeType::buy:
-        VARS::platinum += pl_amount;
+        VARS::Settings.plat += pl_amount;
       }
+      ifstream ifs("settings.json");
+      json current = json::parse(ifs);
+      current["plat"] = VARS::Settings.plat;
+      ofstream of("settings.json", ios::trunc);
+      of << current.dump(4);
       return;
     }
     if (item[i] != "x" && item[i].find("(") == std::string::npos) {
@@ -251,10 +255,10 @@ json UpdateOrder(string trade_id, Trade trd) {
   }
   case itemType::Ayatan: {
     j["perTrade"] = 1;
+    j["amberStars"] = trd.amberStar;
+    j["cyanStars"] = trd.cyanStar;
     break;
   }
-  default:
-    return json{};
   }
   return CurlReq::q
       .Add([trade_id, j] {
@@ -270,7 +274,6 @@ json PostOrder(Trade trd) {
   j["type"] = (trd.Tstate == tradeType::buy) ? "buy" : "sell";
   j["quantity"] = 1;
   j["visible"] = VARS::Settings.vt;
-  // j["perTrade"] = 1;
 
   switch (trd.Itype) {
   case itemType::basic: {
@@ -285,17 +288,21 @@ json PostOrder(Trade trd) {
       j["platinum"] = trd.buy;
     else
       j["platinum"] = trd.sell;
+
     j["rank"] = trd.level;
     break;
   }
   case itemType::Ayatan: {
-    // std::string bdy = R"({
-    //     "perTrade": 1
-    // })";
+    if (trd.Tstate == tradeType::buy)
+      j["platinum"] = trd.buy;
+    else
+      j["platinum"] = trd.sell;
+
+    j["perTrade"] = 1;
+    j["amberStars"] = trd.amberStar;
+    j["cyanStars"] = trd.cyanStar;
     break;
   }
-  default:
-    return json{};
   }
   return CurlReq::q
       .Add([j] {

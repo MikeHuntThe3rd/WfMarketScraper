@@ -1,5 +1,6 @@
 #include "Sorting.hpp"
 #include "OrderHandling.hpp"
+#include "StringOps.hpp"
 #include "VARS.hpp"
 #include <optional>
 namespace Sorting {
@@ -74,8 +75,8 @@ std::optional<Trade> RankBasedMargin(json orders) {
     try {
       key = curr["rank"];
     } catch (const nlohmann::json::exception &e) {
-      cout << "[Error] 'rank' variable not found for: " << slug << endl;
-      return nullopt;
+      cout << "[Attention] rankless mod: " << slug << endl;
+      return BasicMargin(orders);
     }
 
     if (curr["user"]["status"] == "ingame" &&
@@ -151,12 +152,12 @@ std::optional<Trade> AyatanMargin(json orders) {
   std::vector<ayatan_sculpture> sculptures;
 
   auto findElement = [&sculptures](int cyanStars, int amberStars) {
-    auto match = find_if(
-        sculptures.begin(), sculptures.end(),
-        [&cyanStars, &amberStars](const ayatan_sculpture &sculpture) {
-          return sculpture.cyanStars == cyanStars &&
-                 sculpture.amberStars == amberStars;
-        });
+    auto match =
+        find_if(sculptures.begin(), sculptures.end(),
+                [&cyanStars, &amberStars](const ayatan_sculpture &sculpture) {
+                  return sculpture.cyanStars == cyanStars &&
+                         sculpture.amberStars == amberStars;
+                });
     return match;
   };
   auto addIfNew = [&sculptures, findElement](int cyanStars, int amberStars) {
@@ -192,7 +193,8 @@ std::optional<Trade> AyatanMargin(json orders) {
       amber = order["amberStars"];
       cyan = order["cyanStars"];
     } catch (...) {
-      cout << "[Error] 'cyanStars' or 'amberStars' variable(s) not found" << endl;
+      cout << "[Error] 'cyanStars' or 'amberStars' variable(s) not found"
+           << endl;
       continue;
     }
 
@@ -217,16 +219,22 @@ std::optional<Trade> AyatanMargin(json orders) {
   logfile << "resulting margin: " << margin << endl;
   logfile << "seperate sculptures: " << sculptures.size() << endl;
   if (best.has_value())
-    logfile << "struct of the best sculpture (stars: c, a):"
-            << best->cyanStars << ", " << best->amberStars << endl;
+    logfile << "struct of the best sculpture (stars: c, a):" << best->cyanStars
+            << ", " << best->amberStars << endl;
   else
     logfile << "best is empty" << endl;
 
   if (best.has_value() && margin > VARS::Settings.margin &&
       Frequency(itemType::Ayatan, best)) {
-    return std::nullopt;
+    return Trade{slug,
+                 StringOps::GetIdFromSlug(slug),
+                 best.value().buy,
+                 best.value().sell,
+                 itemType::Ayatan,
+                 tradeType::buy,
+                 false};
   } else {
-    return std::nullopt;
+    return nullopt;
   }
 }
 optional<Trade> ValidTrade(string item, vector<string> tags, bool log) {

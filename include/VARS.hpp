@@ -21,7 +21,7 @@ namespace VARS {
 // atomics
 inline std::atomic<bool> thread_run{true};
 // enums
-enum class itemType { basic, mod, Ayatan, platinum };
+enum class itemType { basic, mod, Ayatan };
 enum class tradeType { buy, sell };
 enum class command { run, set };
 // structs
@@ -32,21 +32,25 @@ struct costum_exit {
   costum_exit(int code, string msg) : code(code), msg(msg) {}
 };
 struct Settings_template {
-    int margin;
-    int freq;
-    bool log;
-    bool vt;
-    bool dos;
-    string jwt;
+  int margin;
+  int freq;
+  int plat;
+  bool log;
+  bool vt;
+  bool dos;
+  string jwt;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Settings_template, margin, freq, log, vt, dos, jwt)
-struct rank // stats for a mod at a certain level (only different mod ranks are saved)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Settings_template, margin, freq, plat, log,
+                                   vt, dos, jwt)
+struct rank // stats for a mod at a certain level (only different mod ranks are
+            // saved)
 {
   int level, sell = std::numeric_limits<int>::max(),
              buy = std::numeric_limits<int>::min();
   bool sell_trade = false, buy_trade = false;
 };
-struct ayatan_sculpture // stats for an ayatan_sculpture (every iteration is saved)
+struct ayatan_sculpture // stats for an ayatan_sculpture (every iteration is
+                        // saved)
 {
   int cyanStars, amberStars, buy = std::numeric_limits<int>::min(),
                              sell = std::numeric_limits<int>::max();
@@ -79,14 +83,8 @@ struct Task {
 // global generics
 inline json items;
 inline std::string JWT = "";
-inline uint32_t platinum = 0;
-inline const json DefSettings{
-  {"margin", 10},
-  {"freq", 96},
-  {"log", false},
-  {"vt", false},
-  {"dos", false},
-  {"jwt", ""}
-};
+inline const json DefSettings{{"margin", 10}, {"freq", 96},  {"plat", 0},
+                              {"log", false}, {"vt", false}, {"dos", false},
+                              {"jwt", ""}};
 inline Settings_template Settings;
 } // namespace VARS
