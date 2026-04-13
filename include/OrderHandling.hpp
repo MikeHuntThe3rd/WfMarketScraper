@@ -3,6 +3,7 @@
 #include "StringOps.hpp"
 #include "VARS.hpp"
 #include "json.hpp"
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -25,5 +26,6 @@ json UpdateOrder(string trade_id, Trade trd);
 // trade manager functions
 void HandleNewTrade(Trade trd);
 void HandlelocalTrade(vector<string> item, tradeType trade_state);
+void UpdateTrade_s(optional<Trade> trd);
 
 } // namespace OrderHandling

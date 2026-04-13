@@ -1,5 +1,6 @@
 #include "OrderHandling.hpp"
 #include "CurlReq.hpp"
+#include "Sorting.hpp"
 #include "Trades.hpp"
 #include "VARS.hpp"
 #include <cstdint>
@@ -64,7 +65,7 @@ void HandlelocalTrade(vector<string> item, tradeType trade_state) {
         return;
       }
       case VARS::tradeType::buy: {
-        cout << "[Updating] " << slug << endl;
+        cout << "[Moving] " << slug << endl;
 
         auto updated_trd = order.second;
         updated_trd.Tstate = VARS::tradeType::sell;
@@ -73,7 +74,7 @@ void HandlelocalTrade(vector<string> item, tradeType trade_state) {
           OrderHandling::DeleteOrder(order.first);
           Trds::trades.Set(order.first, updated_trd);
         } else {
-          cout << "[Error] update failed" << endl;
+          cout << "[Error] move failed" << endl;
         }
         return;
       }
@@ -140,6 +141,12 @@ void EElogChecking() {
         boughtItems.clear();
       }
 
+      if (line.find("SendResult_MENU_CANCEL()") != string::npos) {
+        CheckUnlocked = {false, VARS::tradeType::sell};
+        soldItems.clear();
+        boughtItems.clear();
+      }
+
       // output
       if (line.find("description=The trade was successful!") !=
           std::string::npos) {
@@ -168,6 +175,49 @@ void EElogChecking() {
     trade_type_swap:;
     }
     CurlReq::wait();
+  }
+}
+
+void UpdateTrade_s(optional<Trade> trd) {
+  json trades_remote =
+      CurlReq::q
+          .Add([] {
+            return CurlReq::__GET("https://api.warframe.market/v2/orders/my",
+                                  {"Content-Type: application/json",
+                                   "Accept: application/json",
+                                   "Authorization: Bearer " + VARS::JWT});
+          })
+          .get();
+  Trds::trades.Sync(trades_remote);
+  auto map = Trds::trades.Read();
+  auto FindItem = [](string id) -> json {
+    for (const json &curr : VARS::items["data"]) {
+      if (curr["id"] == id)
+        return curr;
+    }
+    return json{};
+  };
+
+  for (json const &order : trades_remote["data"]) {
+    if (!trd.has_value() && map.find(order["id"]) != map.end()) {
+      auto remote_trade = map.find(order["id"]);
+      json item = FindItem(remote_trade->second.id);
+
+      Sorting::ValidTrade(item["slug"], item["tags"], VARS::Settings.log);
+    } else if (trd.has_value() && map.find(order["id"]) != map.end() &&
+               map.find(order["id"])->second.slug == trd.value().slug) {
+
+      cout << "[Updating] " << trd.value().slug << endl;
+
+      json update_status = OrderHandling::UpdateOrder(order["id"], trd.value());
+
+      if (!update_status.empty() && update_status["error"] == nullptr)
+        Trds::trades.Set(order["id"], trd.value());
+      else {
+        cout << "[Error] update failed" << endl;
+      }
+      return;
+    }
   }
 }
 
