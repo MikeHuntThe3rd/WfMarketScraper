@@ -2,6 +2,7 @@
 #include "StringOps.hpp"
 #include "VARS.hpp"
 #include "json.hpp"
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -22,8 +23,8 @@ public:
 
 private:
   unordered_map<string, Trade> Trades_inner;
+  optional<json> FindTrade(string trade_id, json remote_trades);
   std::mutex thread_lock_key;
-  std::condition_variable cv;
 };
 
 inline Trades trades{};

@@ -21,6 +21,15 @@ string GetIdFromSlug(string slug) {
   return "0";
 }
 
+string GetSlugFromId(string id) {
+  for (const json &curr : items["data"]) {
+    if (curr["id"] == id)
+      return curr["slug"];
+  }
+  cout << "clouldnt find id for: " << "|" << id << "|" << std::endl;
+  return "0";
+}
+
 void LowerCase(string &word) {
   transform(word.begin(), word.end(), word.begin(),
             [](unsigned char ch) { return tolower(ch); });
@@ -42,16 +51,7 @@ itemType GetITypeFromSlug(string slug) {
   return VARS::itemType::Ayatan;
 }
 
-string GetSlugFromId(string id) {
-  for (const json &curr : items["data"]) {
-    if (curr["id"] == id)
-      return curr["slug"];
-  }
-  return "0";
-}
-
-vector<string> SeperateBy(stringstream &SS, string &line,
-                                    char separator) {
+vector<string> SeperateBy(stringstream &SS, string &line, char separator) {
   vector<string> result;
   while (getline(SS, line, separator)) {
     result.push_back(line);

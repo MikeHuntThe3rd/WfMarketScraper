@@ -1,13 +1,14 @@
 #include "Trades.hpp"
+#include "StringOps.hpp"
 #include "VARS.hpp"
 #include <mutex>
+#include <optional>
 
 void Trds::Trades::Add(string id, Trade trd) {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   auto iter = Trades_inner.find(id);
   if (iter == Trades_inner.end())
     Trades_inner.insert({id, trd});
-  cv.notify_one();
 }
 
 void Trds::Trades::Remove(std::string id) {
@@ -15,7 +16,6 @@ void Trds::Trades::Remove(std::string id) {
   auto iter = Trades_inner.find(id);
   if (iter != Trades_inner.end())
     Trades_inner.erase(iter);
-  cv.notify_one();
 }
 
 void Trds::Trades::Set(string id, Trade trd) {
@@ -23,13 +23,23 @@ void Trds::Trades::Set(string id, Trade trd) {
   auto iter = Trades_inner.find(id);
   if (iter != Trades_inner.end())
     iter->second = trd;
-  cv.notify_one();
+}
+
+optional<json> Trds::Trades::FindTrade(string trade_id, json remote_trades) {
+  for (const json &trade : remote_trades["data"]) {
+    if (trade["id"] == trade_id) {
+      return trade;
+    }
+  }
+  return nullopt;
 }
 
 void Trds::Trades::Sync(json orders_my) {
   std::lock_guard<std::mutex> lock(thread_lock_key);
+  // create and update
   for (const json &order : orders_my["data"]) {
-    if (Trades_inner.find(order["id"]) == Trades_inner.end()) {
+    auto iter = Trades_inner.find(order["id"]);
+    if (iter == Trades_inner.end()) {
 
       string slug = GetSlugFromId(order["itemId"]);
       VARS::itemType i_type = GetITypeFromSlug(slug);
@@ -44,27 +54,45 @@ void Trds::Trades::Sync(json orders_my) {
                        true};
 
       switch (i_type) {
-      case VARS::itemType::basic:
-        Trades_inner.insert({order["id"], trd});
-        break;
       case VARS::itemType::mod: {
         trd.level = order["rank"];
-        Trades_inner.insert({order["id"], trd});
       }
 
       break;
       case VARS::itemType::Ayatan: {
         trd.amberStar = order["amberStars"];
         trd.cyanStar = order["cyanStars"];
-        Trades_inner.insert({order["id"], trd});
         break;
       }
       default:
         break;
       }
+      Trades_inner.insert({order["id"], trd});
+    } else {
+      switch (iter->second.Tstate) {
+      case VARS::tradeType::buy:
+        iter->second.buy = order["platinum"];
+        break;
+      case VARS::tradeType::sell:
+        iter->second.sell = order["platinum"];
+        break;
+      }
     }
   }
-  cv.notify_one();
+
+  // deleting
+  bool can_delete;
+  for (auto &local_trade : Trades_inner) {
+    can_delete = true;
+    for (const json &remote_trade : orders_my["data"]) {
+      if (local_trade.first == remote_trade["id"]) {
+        can_delete = false;
+        break;
+      }
+    }
+    if (can_delete)
+      Trades_inner.erase(local_trade.first);
+  }
 }
 
 unordered_map<string, Trade> Trds::Trades::Read() {

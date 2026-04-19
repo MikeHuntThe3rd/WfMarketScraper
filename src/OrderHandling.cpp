@@ -3,7 +3,6 @@
 #include "Sorting.hpp"
 #include "Trades.hpp"
 #include "VARS.hpp"
-#include <cstdint>
 #include <fstream>
 #include <ios>
 #include <iostream>

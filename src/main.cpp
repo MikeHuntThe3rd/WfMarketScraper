@@ -11,8 +11,6 @@
 #include <ostream>
 #include <string>
 #include <thread>
-#include <type_traits>
-#include <vector>
 
 template <typename T>
 void AddCommandtriplex(CLI::App *set, string name, string help) {
@@ -38,8 +36,8 @@ void AddCommandtriplex(CLI::App *set, string name, string help) {
       ofstream set_file("settings.json", ios::trunc);
       set_file << setts.dump(4);
     } else if (val->has_value()) {
-      cout << "setting: " << name << " to: " << boolalpha << val->value()
-           << noboolalpha << endl;
+      cout << "setting: " << name << endl
+           << " to: " << boolalpha << val->value() << noboolalpha << endl;
       setts[name] = val->value();
       ofstream set_file("settings.json", ios::trunc);
       set_file << setts.dump(4);
@@ -105,6 +103,16 @@ void Run(CLI::App *run, optional<string> jwt) {
 
   if (run->got_subcommand("web")) {
     WebLoop();
+  } else if (run->got_subcommand("update")) {
+    CurlReq::setup();
+    items = CurlReq::q
+                .Add([] {
+                  return CurlReq::__GET("https://api.warframe.market/v2/items");
+                })
+                .get();
+    OrderHandling::UpdateTrade_s();
+    CurlReq::q.WaitUntilQueueEmpty();
+    CurlReq::disconnect();
   } else if (run->got_subcommand("delete")) {
     CurlReq::setup();
     OrderHandling::DeleteOrder();
@@ -152,6 +160,7 @@ int main(int argc, char *argv[]) {
         "web", "scrapes the warframe market site for benefitial trades");
     run->add_subcommand("delete", "deletes all trades");
     run->add_subcommand("local", "runs local file checking");
+    run->add_subcommand("update", "updates all orders if it can");
 
     auto set = app.add_subcommand("set", "subcommand for managing settings");
 
