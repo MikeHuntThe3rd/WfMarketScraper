@@ -4,28 +4,29 @@
 #include <mutex>
 #include <optional>
 
-void Trds::Trades::Add(string id, Trade trd) {
+namespace Trds {
+void Trades::Add(string id, Trade trd) {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   auto iter = Trades_inner.find(id);
   if (iter == Trades_inner.end())
     Trades_inner.insert({id, trd});
 }
 
-void Trds::Trades::Remove(std::string id) {
+void Trades::Remove(std::string id) {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   auto iter = Trades_inner.find(id);
   if (iter != Trades_inner.end())
     Trades_inner.erase(iter);
 }
 
-void Trds::Trades::Set(string id, Trade trd) {
+void Trades::Set(string id, Trade trd) {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   auto iter = Trades_inner.find(id);
   if (iter != Trades_inner.end())
     iter->second = trd;
 }
 
-optional<json> Trds::Trades::FindTrade(string trade_id, json remote_trades) {
+optional<json> Trades::FindTrade(string trade_id, json remote_trades) {
   for (const json &trade : remote_trades["data"]) {
     if (trade["id"] == trade_id) {
       return trade;
@@ -34,7 +35,7 @@ optional<json> Trds::Trades::FindTrade(string trade_id, json remote_trades) {
   return nullopt;
 }
 
-void Trds::Trades::Sync(json orders_my) {
+void Trades::Sync(json orders_my) {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   // create and update
   for (const json &order : orders_my["data"]) {
@@ -99,3 +100,4 @@ unordered_map<string, Trade> Trds::Trades::Read() {
   std::lock_guard<std::mutex> lock(thread_lock_key);
   return Trades_inner;
 }
+} // namespace Trds
