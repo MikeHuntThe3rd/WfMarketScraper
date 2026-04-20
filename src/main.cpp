@@ -37,7 +37,7 @@ void AddCommandtriplex(CLI::App *set, string name, string help) {
       set_file << setts.dump(4);
     } else if (val->has_value()) {
       cout << "setting: " << name << endl
-           << " to: " << boolalpha << val->value() << noboolalpha << endl;
+           << "to: " << boolalpha << val->value() << noboolalpha << endl;
       setts[name] = val->value();
       ofstream set_file("settings.json", ios::trunc);
       set_file << setts.dump(4);

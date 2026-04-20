@@ -35,18 +35,19 @@ struct Settings_template {
   int margin;
   int freq;
   int plat;
+  int offset;
   bool log;
   bool vt;
   bool dos;
   string jwt;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Settings_template, margin, freq, plat, log,
-                                   vt, dos, jwt)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Settings_template, margin, freq, plat,
+                                   offset, log, vt, dos, jwt)
 struct rank // stats for a mod at a certain level (only different mod ranks are
             // saved)
 {
-  int level, sell = std::numeric_limits<int>::max(),
-             buy = std::numeric_limits<int>::min();
+  int sell = std::numeric_limits<int>::max(),
+      buy = std::numeric_limits<int>::min();
   bool sell_trade = false, buy_trade = false;
 };
 struct ayatan_sculpture // stats for an ayatan_sculpture (every iteration is
@@ -83,8 +84,8 @@ struct Task {
 // global generics
 inline json items;
 inline std::string JWT = "";
-inline const json DefSettings{{"margin", 10}, {"freq", 96},  {"plat", 0},
-                              {"log", false}, {"vt", false}, {"dos", false},
-                              {"jwt", ""}};
+inline const json DefSettings{{"margin", 10}, {"freq", 96},   {"plat", 0},
+                              {"offset", 1},  {"log", false}, {"vt", false},
+                              {"dos", false}, {"jwt", ""}};
 inline Settings_template Settings;
 } // namespace VARS

@@ -3,6 +3,7 @@
 #include "StringOps.hpp"
 #include "VARS.hpp"
 #include <optional>
+#include <unordered_map>
 namespace Sorting {
 std::string slug = "";
 std::ofstream logfile;
@@ -57,18 +58,11 @@ bool Frequency(itemType type, std::optional<std::any> data) {
   }
 }
 std::optional<Trade> RankBasedMargin(json orders) {
-  std::vector<VARS::rank> ranks;
-  auto find_element = [&ranks](int level) -> VARS::rank & {
-    auto iterator =
-        std::find_if(ranks.begin(), ranks.end(), [&level](VARS::rank &element) {
-          return element.level == level;
-        });
-    if (iterator != ranks.end()) {
-      return *iterator;
-    } else {
-      ranks.emplace_back(VARS::rank{level});
-      return ranks.back();
-    }
+  unordered_map<int, VARS::rank> ranks;
+  auto addIfNew = [&ranks](int level) -> void {
+    auto iter = ranks.find(level);
+    if (iter == ranks.end())
+      ranks.insert({level, VARS::rank{}});
   };
   for (json curr : orders["data"]) {
     int key;
@@ -78,41 +72,51 @@ std::optional<Trade> RankBasedMargin(json orders) {
       cout << "[Attention] rankless mod: " << slug << endl;
       return BasicMargin(orders);
     }
+    addIfNew(key);
+    auto iter = ranks.find(key);
+    auto value = &iter->second;
 
     if (curr["user"]["status"] == "ingame" &&
-        curr["platinum"] < find_element(key).sell && curr["type"] == "sell") {
-      find_element(key).sell_trade = true;
-      find_element(key).sell = curr["platinum"];
+        curr["platinum"].get<int>() - VARS::Settings.offset < value->sell &&
+        curr["type"] == "sell") {
+      value->sell_trade = true;
+      value->sell = curr["platinum"].get<int>() - VARS::Settings.offset;
     }
     if (curr["user"]["status"] == "ingame" &&
-        curr["platinum"] > find_element(key).buy && curr["type"] == "buy") {
-      find_element(key).buy_trade = true;
-      find_element(key).buy = curr["platinum"];
+        curr["platinum"].get<int>() + VARS::Settings.offset > value->buy &&
+        curr["type"] == "buy") {
+      value->buy_trade = true;
+      value->buy = curr["platinum"].get<int>() + VARS::Settings.offset;
     }
   }
-  int margin = std::numeric_limits<int>::min();
-  VARS::rank best;
+  int margin = std::numeric_limits<int>::min(), level;
+  VARS::rank best{};
   bool value_found = false;
   for (const auto &rank : ranks) {
-    if ((rank.buy_trade && rank.sell_trade) && rank.sell - rank.buy > margin) {
-      margin = rank.sell - rank.buy;
-      best = rank;
+    auto key = rank.first;
+    auto value = rank.second;
+    bool good = (value.buy_trade && value.sell_trade);
+    bool better = value.sell - value.buy > margin;
+    if (good && better) {
+      margin = value.sell - value.buy;
+      best = value;
+      level = key;
       value_found = true;
     }
   }
   if (value_found) {
     logfile << "margin: " << margin << std::endl;
-    logfile << "rank: " << best.level << std::endl;
+    logfile << "rank: " << level << std::endl;
   } else
     logfile << "no good mod trade found: " << std::endl;
 
   if (value_found && margin > VARS::Settings.margin &&
-      Frequency(itemType::mod, best.level)) {
+      Frequency(itemType::mod, level)) {
     auto trd = Trade{slug,          StringOps::GetIdFromSlug(slug),
                      best.buy,      best.sell,
                      itemType::mod, tradeType::buy,
                      false};
-    trd.level = best.level;
+    trd.level = level;
     return trd;
   } else {
     return std::nullopt;
@@ -123,14 +127,16 @@ std::optional<Trade> BasicMargin(json orders) {
   int sell = std::numeric_limits<int>::max();
   bool buy_trade = false, sell_trade = false;
   for (json curr : orders["data"]) {
-    if (curr["platinum"] < sell && curr["user"]["status"] == "ingame" &&
+    if (curr["user"]["status"] == "ingame" &&
+        curr["platinum"].get<int>() - VARS::Settings.offset < sell &&
         curr["type"] == "sell") {
-      sell = curr["platinum"];
+      sell = curr["platinum"].get<int>() - VARS::Settings.offset;
       sell_trade = true;
     }
-    if (curr["platinum"] > buy && curr["user"]["status"] == "ingame" &&
+    if (curr["user"]["status"] == "ingame" &&
+        curr["platinum"].get<int>() + VARS::Settings.offset > buy &&
         curr["type"] == "buy") {
-      buy = curr["platinum"];
+      buy = curr["platinum"].get<int>() + VARS::Settings.offset;
       buy_trade = true;
     }
   }
@@ -201,10 +207,12 @@ std::optional<Trade> AyatanMargin(json orders) {
     addIfNew(cyan, amber);
 
     if (order["user"]["status"] == "ingame" && order["type"] == "sell") {
-      priceCompare(cyan, amber, tradeType::sell, order["platinum"]);
+      priceCompare(cyan, amber, tradeType::sell,
+                   order["platinum"].get<int>() - VARS::Settings.offset);
     }
     if (order["user"]["status"] == "ingame" && order["type"] == "buy") {
-      priceCompare(cyan, amber, tradeType::buy, order["platinum"]);
+      priceCompare(cyan, amber, tradeType::buy,
+                   order["platinum"].get<int>() + VARS::Settings.offset);
     }
   }
 
