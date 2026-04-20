@@ -110,7 +110,7 @@ void Run(CLI::App *run, optional<string> jwt) {
                   return CurlReq::__GET("https://api.warframe.market/v2/items");
                 })
                 .get();
-    OrderHandling::UpdateTrade_s();
+    OrderHandling::HandleAllTrades();
     CurlReq::q.WaitUntilQueueEmpty();
     CurlReq::disconnect();
   } else if (run->got_subcommand("delete")) {

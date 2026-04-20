@@ -24,8 +24,9 @@ json DeleteOrder(std::string id = "");
 json UpdateOrder(string trade_id, Trade trd);
 
 // trade manager functions
+json FindItem(string id);
+void ManageOneTrade(json order);
 void HandleNewTrade(Trade trd);
+void HandleAllTrades();
 void HandlelocalTrade(vector<string> item, tradeType trade_state);
-void UpdateTrade_s(optional<Trade> trd = nullopt);
-
 } // namespace OrderHandling

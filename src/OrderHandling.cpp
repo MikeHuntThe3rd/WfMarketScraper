@@ -178,7 +178,79 @@ void EElogChecking() {
   }
 }
 
-void UpdateTrade_s(optional<Trade> trd) {
+json FindItem(string id) {
+  for (const json &curr : VARS::items["data"]) {
+    if (curr["id"] == id)
+      return curr;
+  }
+  return json{};
+}
+
+void ManageOneTrade(json order) {
+  auto map = Trds::trades.Read();
+  auto iter = map.find(order["id"]);
+  if (iter == map.end()) {
+    cout << "[Error] trades doesn't contain the provided id: " << order["id"]
+         << endl;
+    return;
+  }
+  Trade remote_trade = iter->second;
+  json item = FindItem(remote_trade.id);
+
+  auto validated_trade =
+      Sorting::ValidTrade(item["slug"], item["tags"], VARS::Settings.log);
+  if (!validated_trade.has_value() &&
+      remote_trade.Tstate == VARS::tradeType::buy) {
+    cout << "[Deleting] no good trade found for: " << remote_trade.slug << endl;
+    json delete_status = OrderHandling::DeleteOrder(order["id"]);
+
+    if (!delete_status.empty() && delete_status["error"] == nullptr) {
+      Trds::trades.Remove(order["id"]);
+      return;
+    } else {
+      cout << "[Error] delete failed" << endl;
+      return;
+    }
+  }
+  if (validated_trade.has_value() &&
+      (validated_trade->buy < remote_trade.buy ||
+       validated_trade->sell > remote_trade.sell)) {
+    remote_trade.buy = validated_trade->buy;
+    remote_trade.sell = validated_trade->sell;
+    cout << "[Updating] " << remote_trade.slug << endl;
+
+    json update_status = OrderHandling::UpdateOrder(order["id"], remote_trade);
+
+    if (!update_status.empty() && update_status["error"] == nullptr) {
+      Trds::trades.Set(order["id"], remote_trade);
+      return;
+    } else {
+      cout << "[Error] update failed" << endl;
+      return;
+    }
+  } else {
+    cout << "unchanged: " << remote_trade.slug << endl;
+  }
+}
+
+void HandleAllTrades() {
+  json trades_remote =
+      CurlReq::q
+          .Add([] {
+            return CurlReq::__GET("https://api.warframe.market/v2/orders/my",
+                                  {"Content-Type: application/json",
+                                   "Accept: application/json",
+                                   "Authorization: Bearer " + VARS::JWT});
+          })
+          .get();
+  Trds::trades.Sync(trades_remote);
+
+  for (const json &order : trades_remote["data"]) {
+    ManageOneTrade(order);
+  }
+}
+
+void HandleNewTrade(Trade trd) {
   json trades_remote =
       CurlReq::q
           .Add([] {
@@ -190,68 +262,24 @@ void UpdateTrade_s(optional<Trade> trd) {
           .get();
   Trds::trades.Sync(trades_remote);
   auto map = Trds::trades.Read();
-  auto FindItem = [](string id) -> json {
-    for (const json &curr : VARS::items["data"]) {
-      if (curr["id"] == id)
-        return curr;
-    }
-    return json{};
-  };
+  auto iter = map.end();
 
-  for (const json &order : trades_remote["data"]) {
-    if (!trd.has_value() && map.find(order["id"]) != map.end()) {
-      Trade remote_trade = map.find(order["id"])->second;
-      json item = FindItem(remote_trade.id);
-
-      auto validated_trade =
-          Sorting::ValidTrade(item["slug"], item["tags"], VARS::Settings.log);
-      if (!validated_trade.has_value() &&
-          remote_trade.Tstate == VARS::tradeType::buy) {
-        cout << "[Deleting] no good trade found for: " << remote_trade.slug
-             << endl;
-        OrderHandling::DeleteOrder(order["id"]);
-        continue;
-      }
-      if (validated_trade->buy < remote_trade.buy ||
-          validated_trade->sell > remote_trade.sell) {
-        remote_trade.buy = validated_trade->buy;
-        remote_trade.sell = validated_trade->sell;
-        cout << "[Updating] " << remote_trade.slug << endl;
-
-        json update_status =
-            OrderHandling::UpdateOrder(order["id"], remote_trade);
-
-        if (!update_status.empty() && update_status["error"] == nullptr)
-          Trds::trades.Set(order["id"], remote_trade);
-        else {
-          cout << "[Error] update failed" << endl;
-        }
-      } else {
-        cout << "unchanged: " << remote_trade.slug << endl;
-      }
-    } else if (trd.has_value() && map.find(order["id"]) != map.end() &&
-               map.find(order["id"])->second.slug == trd.value().slug) {
-
-      cout << "[Updating] " << trd.value().slug << endl;
-
-      json update_status = OrderHandling::UpdateOrder(order["id"], trd.value());
-
-      if (!update_status.empty() && update_status["error"] == nullptr)
-        Trds::trades.Set(order["id"], trd.value());
-      else {
-        cout << "[Error] update failed" << endl;
-      }
-      return;
+  for (auto it = map.begin(); it != map.end(); it++) {
+    if (it->second.slug == trd.slug &&
+        it->second.Tstate == VARS::tradeType::buy) {
+      iter = it;
+      break;
     }
   }
-}
 
-void HandleNewTrade(Trade trd) {
-  OrderHandling::UpdateTrade_s(trd);
-
-  json post_status = OrderHandling::PostOrder(trd);
-  if (!post_status.empty() && post_status["error"] == nullptr)
-    Trds::trades.Add(post_status["data"]["id"], trd);
+  if (iter != map.end() &&
+      (trd.buy < iter->second.buy || trd.sell > iter->second.sell)) {
+    cout << "[Updating] " << trd.slug << endl;
+    UpdateOrder(iter->first, trd);
+  } else {
+    cout << "[Posting] " << trd.slug << endl;
+    PostOrder(trd);
+  }
 }
 
 json DeleteOrder(std::string id) {
