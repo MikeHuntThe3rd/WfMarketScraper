@@ -20,7 +20,7 @@ bool Frequency(itemType type, std::optional<std::any> data) {
   case itemType::basic:
     logfile << "----------checking frequency for basic item" << std::endl;
     for (json curr : stats["payload"]["statistics_closed"]["48hours"]) {
-      vol += (int)curr["volume"];
+      vol += curr["volume"].get<int>();
     }
     logfile << "volume min: " << vol << std::endl;
     break;
@@ -29,19 +29,19 @@ bool Frequency(itemType type, std::optional<std::any> data) {
     logfile << "----------checking frequency for mod item" << std::endl;
     for (json curr : stats["payload"]["statistics_closed"]["48hours"]) {
       if ((int)curr["mod_rank"] == rank) {
-        vol += (int)curr["volume"];
+        vol += curr["volume"].get<int>();
       }
     }
     logfile << "volume min: " << vol << std::endl;
     break;
   }
   case itemType::Ayatan: {
-    int cyan = std::any_cast<ayatan_sculpture>(data.value()).cyanStars;
-    int amber = std::any_cast<ayatan_sculpture>(data.value()).amberStars;
+    auto sculpture = any_cast<ayatan_sculpture>(data.value());
     logfile << "----------checking frequency for ayatan sculpture" << std::endl;
     for (json curr : stats["payload"]["statistics_closed"]["48hours"]) {
-      if ((int)curr["cyan_stars"] == cyan && (int)curr["cyan_stars"] == amber) {
-        vol += (int)curr["volume"];
+      if (curr["cyan_stars"].get<int>() == sculpture.cyanStars &&
+          curr["cyan_stars"].get<int>() == sculpture.amberStars) {
+        vol += curr["volume"].get<int>();
       }
     }
     logfile << "volume min: " << vol << std::endl;
@@ -69,7 +69,6 @@ std::optional<Trade> RankBasedMargin(json orders) {
     try {
       key = curr["rank"];
     } catch (const nlohmann::json::exception &e) {
-      cout << "[Attention] rankless mod: " << slug << endl;
       return BasicMargin(orders);
     }
     addIfNew(key);
@@ -201,7 +200,7 @@ std::optional<Trade> AyatanMargin(json orders) {
     } catch (...) {
       cout << "[Error] 'cyanStars' or 'amberStars' variable(s) not found"
            << endl;
-      continue;
+      return nullopt;
     }
 
     addIfNew(cyan, amber);
@@ -233,7 +232,7 @@ std::optional<Trade> AyatanMargin(json orders) {
     logfile << "best is empty" << endl;
 
   if (best.has_value() && margin > VARS::Settings.margin &&
-      Frequency(itemType::Ayatan, best)) {
+      Frequency(itemType::Ayatan, best.value())) {
     return Trade{slug,
                  StringOps::GetIdFromSlug(slug),
                  best.value().buy,

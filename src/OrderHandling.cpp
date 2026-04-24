@@ -11,6 +11,11 @@
 #include <vector>
 
 namespace OrderHandling {
+
+// vector<pair<string, VARS::tradeType>>
+// ParseLocalTrades(vector<vector<string>> soldItems,
+//                  vector<vector<string>> boughtItems) {}
+
 void HandlelocalTrade(vector<string> item, tradeType trade_state) {
   std::vector<std::string> name, data;
 

@@ -6,6 +6,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace VARS;
@@ -19,16 +20,19 @@ namespace OrderHandling {
 // Major functions(should be in its own thread)
 void EElogChecking();
 // Helper functions
+void HandlelocalTrade(vector<string> item, tradeType trade_state);
+vector<pair<string, VARS::tradeType>>
+ParseLocalTrades(vector<vector<string>> soldItems,
+                 vector<vector<string>> boughtItems);
+
+// web operations
 json PostOrder(Trade trd);
 json DeleteOrder(std::string id = "");
 json UpdateOrder(string trade_id, Trade trd);
 
-vector<string> parse(string item_parts);
-
-// trade manager functions
+// web trade manager functions
 json FindItem(string id);
 void ManageOneTrade(json order);
 void HandleNewTrade(Trade trd);
 void HandleAllTrades();
-void HandlelocalTrade(vector<string> item, tradeType trade_state);
 } // namespace OrderHandling

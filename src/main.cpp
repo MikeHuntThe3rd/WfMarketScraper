@@ -62,6 +62,29 @@ void LoadSettings() {
   VARS::Settings = loaded_settings.get<VARS::Settings_template>();
 }
 
+void Initialize() {
+  ofstream del("out.log", ios::trunc);
+  del.close();
+  CurlReq::setup();
+  json jwt_status =
+      CurlReq::q
+          .Add([] {
+            return CurlReq::__GET("https://api.warframe.market/v2/orders/my",
+                                  {"Content-Type: application/json",
+                                   "Accept: application/json",
+                                   "Authorization: Bearer " + VARS::JWT});
+          })
+          .get();
+  if (jwt_status["error"] != nullptr)
+    throw VARS::costum_exit{
+        1, "the provided jwt couldn't be linked to an account"};
+  items = CurlReq::q
+              .Add([] {
+                return CurlReq::__GET("https://api.warframe.market/v2/items");
+              })
+              .get();
+}
+
 void WebLoop() {
   CurlReq::setup();
   ofstream del("out.log", ios::trunc);
@@ -69,11 +92,7 @@ void WebLoop() {
   cout << "[Attention] current balance: " << VARS::Settings.plat << endl;
   if (VARS::Settings.dos)
     OrderHandling::DeleteOrder();
-  items = CurlReq::q
-              .Add([] {
-                return CurlReq::__GET("https://api.warframe.market/v2/items");
-              })
-              .get();
+
   while (VARS::thread_run) {
     for (json item : items["data"]) {
       auto trade =
@@ -102,35 +121,28 @@ void Run(CLI::App *run, optional<string> jwt) {
     VARS::JWT = VARS::Settings.jwt;
 
   if (run->got_subcommand("web")) {
+    Initialize();
     WebLoop();
   } else if (run->got_subcommand("update")) {
-    CurlReq::setup();
-    items = CurlReq::q
-                .Add([] {
-                  return CurlReq::__GET("https://api.warframe.market/v2/items");
-                })
-                .get();
+    Initialize();
     OrderHandling::HandleAllTrades();
     CurlReq::q.WaitUntilQueueEmpty();
     CurlReq::disconnect();
   } else if (run->got_subcommand("delete")) {
-    CurlReq::setup();
+    Initialize();
     OrderHandling::DeleteOrder();
     CurlReq::q.WaitUntilQueueEmpty();
     CurlReq::disconnect();
   } else if (run->got_subcommand("local")) {
-    CurlReq::setup();
-    items = CurlReq::q
-                .Add([] {
-                  return CurlReq::__GET("https://api.warframe.market/v2/items");
-                })
-                .get();
+    Initialize();
     OrderHandling::EElogChecking();
     CurlReq::disconnect();
   } else {
+    Initialize();
     std::thread InGameTrades(OrderHandling::EElogChecking);
     WebLoop();
     InGameTrades.join();
+    CurlReq::disconnect();
   }
 }
 
@@ -155,6 +167,7 @@ int main(int argc, char *argv[]) {
     CLI::App app{"Warframe Market Scraper"};
     optional<string> jwt;
     auto run = app.add_subcommand("run", "subcommand for starting the scraper");
+    run->fallthrough();
     run->add_option("-j,--jwt", jwt, "your personal jwt token")->expected(0, 1);
     run->add_subcommand(
         "web", "scrapes the warframe market site for benefitial trades");
