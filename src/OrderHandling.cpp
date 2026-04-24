@@ -87,8 +87,8 @@ void HandlelocalTrade(vector<string> item, tradeType trade_state) {
 void EElogChecking() {
   std::ifstream EE("../../out.txt");
   EE.seekg(0, std::ios::end);
-  std::string line;
-  std::vector<std::vector<std::string>> soldItems, boughtItems;
+  string line;
+  vector<vector<string>> soldItems, boughtItems;
 
   // test append
   // ofstream fil("../../out.txt", ios::app);
@@ -105,9 +105,9 @@ void EElogChecking() {
     // file check by lines
     while (getline(EE, line)) {
       // line data gathering
-      std::string element = "";
-      std::stringstream space{line}, comma{line};
-      std::vector<std::string> spaceSeperated, commaSeperated;
+      string element = "";
+      stringstream space{line}, comma{line};
+      vector<string> spaceSeperated, commaSeperated;
 
       spaceSeperated = StringOps::SeperateBy(space, element, ' ');
       commaSeperated = StringOps::SeperateBy(comma, element, ',');
@@ -147,7 +147,7 @@ void EElogChecking() {
         boughtItems.clear();
       }
 
-      // output
+      // closing the check on trade success
       if (line.find("description=The trade was successful!") !=
           std::string::npos) {
         Trds::trades.Sync(CurlReq::q
@@ -212,9 +212,7 @@ void ManageOneTrade(json order) {
       return;
     }
   }
-  if (validated_trade.has_value() &&
-      (validated_trade->buy < remote_trade.buy ||
-       validated_trade->sell > remote_trade.sell)) {
+  if (validated_trade.has_value()) {
     remote_trade.buy = validated_trade->buy;
     remote_trade.sell = validated_trade->sell;
     cout << "[Updating] " << remote_trade.slug << endl;
@@ -228,8 +226,6 @@ void ManageOneTrade(json order) {
       cout << "[Error] update failed" << endl;
       return;
     }
-  } else {
-    cout << "unchanged: " << remote_trade.slug << endl;
   }
 }
 
@@ -272,8 +268,7 @@ void HandleNewTrade(Trade trd) {
     }
   }
 
-  if (iter != map.end() &&
-      (trd.buy < iter->second.buy || trd.sell > iter->second.sell)) {
+  if (iter != map.end()) {
     cout << "[Updating] " << trd.slug << endl;
     UpdateOrder(iter->first, trd);
   } else {

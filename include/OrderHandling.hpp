@@ -23,6 +23,8 @@ json PostOrder(Trade trd);
 json DeleteOrder(std::string id = "");
 json UpdateOrder(string trade_id, Trade trd);
 
+vector<string> parse(string item_parts);
+
 // trade manager functions
 json FindItem(string id);
 void ManageOneTrade(json order);
