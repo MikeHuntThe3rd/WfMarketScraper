@@ -1,4 +1,5 @@
 #include "StringOps.hpp"
+#include <iostream>
 
 namespace StringOps {
 string Implode(vector<string> array, char seperator) {

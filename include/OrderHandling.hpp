@@ -3,10 +3,7 @@
 #include "StringOps.hpp"
 #include "VARS.hpp"
 #include "json.hpp"
-#include <optional>
-#include <sstream>
 #include <string>
-#include <utility>
 #include <vector>
 
 using namespace VARS;
@@ -16,14 +13,26 @@ using namespace std;
 using json = nlohmann::json;
 
 namespace OrderHandling {
+// types
+struct local_trade {
+  string id;
+  int amount;
+  VARS::tradeType type;
+
+  local_trade(string id, VARS::tradeType type, int amount)
+      : id(id), type(type), amount(amount) {}
+};
 
 // Major functions(should be in its own thread)
 void EElogChecking();
 // Helper functions
 void HandlelocalTrade(vector<string> item, tradeType trade_state);
-vector<pair<string, VARS::tradeType>>
-ParseLocalTrades(vector<vector<string>> soldItems,
-                 vector<vector<string>> boughtItems);
+vector<local_trade> ParseLocalTrades(vector<vector<string>> soldItems,
+                                     vector<vector<string>> boughtItems,
+                                     json orders);
+local_trade ParseSingleTrade(vector<string> data, VARS::tradeType type);
+optional<local_trade> HandleSet(vector<local_trade> &trades,
+                                local_trade current, json orders);
 
 // web operations
 json PostOrder(Trade trd);

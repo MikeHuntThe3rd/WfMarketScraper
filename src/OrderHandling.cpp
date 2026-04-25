@@ -1,63 +1,123 @@
 #include "OrderHandling.hpp"
 #include "CurlReq.hpp"
 #include "Sorting.hpp"
+#include "StringOps.hpp"
 #include "Trades.hpp"
 #include "VARS.hpp"
 #include <fstream>
 #include <ios>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
 
 namespace OrderHandling {
 
-// vector<pair<string, VARS::tradeType>>
-// ParseLocalTrades(vector<vector<string>> soldItems,
-//                  vector<vector<string>> boughtItems) {}
+local_trade ParseSingleTrade(vector<string> data, VARS::tradeType type) {
+  vector<string> slug;
+  int amount = 1;
+  for (int i = 0; i < data.size(); i++) {
+    if (data[i] == "Platinum") {
+      int pl_amount = (int)(stoi(data[i + 2]));
+      return local_trade{"Platinum", type, pl_amount};
+    }
+    if (data[i] == "x") {
+      amount = (int)(stoi(data[i + 2]));
+      break;
+    } else if (data[i].find("(") != string::npos) {
+      break;
+    } else {
+      StringOps::LowerCase(data[i]);
+      slug.push_back(data[i]);
+    }
+  }
+  string slg = StringOps::Implode(slug, '_');
+  return local_trade{StringOps::GetIdFromSlug(slg), type, amount};
+}
+
+optional<local_trade> HandleSet(vector<local_trade> &trades,
+                                local_trade current, json orders) {
+  string root;
+  vector<string> parts;
+  json set =
+      CurlReq::q
+          .Add([current]() {
+            return CurlReq::__GET("https://api.warframe.market/v2/item/" +
+                                  current.id + "/set");
+          })
+          .get();
+  if (set["data"]["items"].size() == 1)
+    return nullopt;
+
+  for (json const &item : set["data"]["items"]) {
+    if (item["setRoot"].get<bool>() == true)
+      root = item["id"].get<string>();
+    else
+      parts.push_back(item["id"].get<string>());
+  }
+  for (json const &order : orders["data"]) {
+    if (order["itemId"].get<string>() == root)
+      goto set_found;
+  }
+  return nullopt;
+set_found:;
+
+  for (string const &part : parts) {
+    for (auto iter = trades.begin(); iter != trades.end(); iter++) {
+      if (iter->id == part && iter->type == current.type) {
+        trades.erase(iter);
+        break;
+      }
+    }
+  }
+  return local_trade{root, current.type, 1};
+}
+
+vector<local_trade> ParseLocalTrades(vector<vector<string>> soldItems,
+                                     vector<vector<string>> boughtItems,
+                                     json orders) {
+  vector<local_trade> trades;
+  if (orders["data"].size() == 0)
+    return trades;
+  for (auto const &sold : soldItems) {
+    trades.push_back(ParseSingleTrade(sold, VARS::tradeType::sell));
+  }
+
+  for (auto const &bought : boughtItems) {
+    trades.push_back(ParseSingleTrade(bought, VARS::tradeType::buy));
+  }
+
+  for (auto l_trade = trades.begin(); l_trade != trades.end();) {
+    bool trade_found = false;
+    for (json const &order : orders["data"]) {
+      VARS::tradeType t_type = (order["type"].get<string>() == "buy")
+                                   ? VARS::tradeType::buy
+                                   : VARS::tradeType::sell;
+      if ((order["itemId"].get<string>() == l_trade->id &&
+           t_type == l_trade->type) ||
+          l_trade->id == "Platinum") {
+        trade_found = true;
+        break;
+      }
+    }
+    if (!trade_found) {
+      auto is_set = HandleSet(trades, *l_trade, orders);
+      if (is_set.has_value()) {
+        trades.push_back(is_set.value());
+        l_trade++;
+      } else
+        l_trade = trades.erase(l_trade);
+    } else
+      l_trade++;
+  }
+  return trades;
+}
 
 void HandlelocalTrade(vector<string> item, tradeType trade_state) {
   std::vector<std::string> name, data;
 
   // get the name parts of the item
-  for (int i = 0; i < item.size(); i++) {
-    if (item[i] == "Platinum") {
-      int pl_amount = static_cast<int>(stoi(item[i + 2]));
-      switch (trade_state) {
-      case VARS::tradeType::sell:
-        VARS::Settings.plat -= pl_amount;
-      case VARS::tradeType::buy:
-        VARS::Settings.plat += pl_amount;
-      }
-      ifstream ifs("settings.json");
-      json current = json::parse(ifs);
-      current["plat"] = VARS::Settings.plat;
-      ofstream of("settings.json", ios::trunc);
-      of << current.dump(4);
-      cout << "[Attention] new balance is: " << VARS::Settings.plat << endl;
-      return;
-    }
-    if (item[i] != "x" && item[i].find("(") == std::string::npos) {
-      LowerCase(item[i]);
-      name.push_back(item[i]);
-    } else {
-      data.insert(data.end(), item.begin() + i, item.end());
-      break;
-    }
-  }
-
-  int amount, level;
-  for (int i = 0; i < data.size(); i++) {
-    if (data[i] == "x") {
-      amount = std::stoi(data[i + 1]);
-      break;
-    }
-    if (data[i] == "RANK") {
-      level = std::stoi(data[i + 1]);
-      break;
-    }
-  }
-
   string slug = Implode(name, '_');
   for (const auto &order : Trds::trades.Read()) {
     if (order.second.slug == slug && order.second.Tstate == trade_state) {
@@ -96,9 +156,9 @@ void EElogChecking() {
   vector<vector<string>> soldItems, boughtItems;
 
   // test append
-  // ofstream fil("../../out.txt", ios::app);
-  // fil << ifstream("../../inp.txt").rdbuf();
-  // fil.close();
+  ofstream fil("../../out.txt", ios::app);
+  fil << ifstream("../../inp.txt").rdbuf();
+  fil.close();
 
   while (VARS::thread_run) {
     // ifstream
@@ -155,22 +215,24 @@ void EElogChecking() {
       // closing the check on trade success
       if (line.find("description=The trade was successful!") !=
           std::string::npos) {
-        Trds::trades.Sync(CurlReq::q
-                              .Add([] {
-                                return CurlReq::__GET(
-                                    "https://api.warframe.market/v2/orders/my",
-                                    {"Content-Type: application/json",
-                                     "Accept: application/json",
-                                     "Authorization: Bearer " + VARS::JWT});
-                              })
-                              .get());
+        json orders = CurlReq::q
+                          .Add([] {
+                            return CurlReq::__GET(
+                                "https://api.warframe.market/v2/orders/my",
+                                {"Content-Type: application/json",
+                                 "Accept: application/json",
+                                 "Authorization: Bearer " + VARS::JWT});
+                          })
+                          .get();
+        Trds::trades.Sync(orders);
 
-        for (auto const &curr : soldItems) {
-          HandlelocalTrade(curr, tradeType::sell);
+        cout << "parsing..." << endl;
+        auto trds = ParseLocalTrades(soldItems, boughtItems, orders);
+        cout << "results: " << endl;
+        for (auto trd : trds) {
+          cout << "id: " << trd.id << endl << "amount: " << trd.amount << endl;
         }
-        for (auto const &curr : boughtItems) {
-          HandlelocalTrade(curr, tradeType::buy);
-        }
+        cout << "done" << endl;
 
         // data resetting
         CheckUnlocked = {false, VARS::tradeType::sell};
