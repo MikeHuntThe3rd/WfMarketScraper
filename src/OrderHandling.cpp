@@ -114,14 +114,27 @@ vector<local_trade> ParseLocalTrades(vector<vector<string>> soldItems,
   return trades;
 }
 
-void HandlelocalTrade(vector<string> item, tradeType trade_state) {
-  std::vector<std::string> name, data;
+void HandlelocalTrade(local_trade trd) {
+  if (trd.id == "Platinum") {
+    json sett = json::parse(ifstream("settings.json"));
+    switch (trd.type) {
+    case VARS::tradeType::sell: {
+      sett["plat"] = sett["plat"].get<int>() - trd.amount;
+      break;
+    }
+    case VARS::tradeType::buy: {
+      sett["plat"] = sett["plat"].get<int>() + trd.amount;
+      break;
+    }
+    }
+    ofstream("settings.json", ios::trunc) << sett.dump(4);
+    return;
+  }
 
-  // get the name parts of the item
-  string slug = Implode(name, '_');
   for (const auto &order : Trds::trades.Read()) {
-    if (order.second.slug == slug && order.second.Tstate == trade_state) {
-      switch (trade_state) {
+    if (order.second.id == trd.id && order.second.Tstate == trd.type) {
+      string slug = StringOps::GetSlugFromId(trd.id);
+      switch (trd.type) {
       case VARS::tradeType::sell: {
         cout << "[Deleting] " << slug << endl;
 
@@ -226,13 +239,10 @@ void EElogChecking() {
                           .get();
         Trds::trades.Sync(orders);
 
-        cout << "parsing..." << endl;
         auto trds = ParseLocalTrades(soldItems, boughtItems, orders);
-        cout << "results: " << endl;
-        for (auto trd : trds) {
-          cout << "id: " << trd.id << endl << "amount: " << trd.amount << endl;
+        for (auto const &trd : trds) {
+          HandlelocalTrade(trd);
         }
-        cout << "done" << endl;
 
         // data resetting
         CheckUnlocked = {false, VARS::tradeType::sell};

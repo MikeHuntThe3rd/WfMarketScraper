@@ -26,11 +26,11 @@ struct local_trade {
 // Major functions(should be in its own thread)
 void EElogChecking();
 // Helper functions
-void HandlelocalTrade(vector<string> item, tradeType trade_state);
 vector<local_trade> ParseLocalTrades(vector<vector<string>> soldItems,
                                      vector<vector<string>> boughtItems,
                                      json orders);
 local_trade ParseSingleTrade(vector<string> data, VARS::tradeType type);
+void HandlelocalTrade(local_trade trd);
 optional<local_trade> HandleSet(vector<local_trade> &trades,
                                 local_trade current, json orders);
 
