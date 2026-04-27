@@ -136,10 +136,7 @@ void HandlelocalTrade(local_trade trd) {
       string slug = StringOps::GetSlugFromId(trd.id);
       switch (trd.type) {
       case VARS::tradeType::sell: {
-        cout << "[Deleting] " << slug << endl;
-
         DeleteOrder(order.first);
-        Trds::trades.Remove(order.first);
         return;
       }
       case VARS::tradeType::buy: {
@@ -147,13 +144,9 @@ void HandlelocalTrade(local_trade trd) {
 
         auto updated_trd = order.second;
         updated_trd.Tstate = VARS::tradeType::sell;
-        json post_status = OrderHandling::PostOrder(updated_trd);
-        if (!post_status.empty() && post_status["error"] == nullptr) {
-          OrderHandling::DeleteOrder(order.first);
-          Trds::trades.Set(order.first, updated_trd);
-        } else {
+        if (!OrderHandling::PostOrder(updated_trd) ||
+            !OrderHandling::DeleteOrder(order.first))
           cout << "[Error] move failed" << endl;
-        }
         return;
       }
       }
@@ -276,34 +269,20 @@ void ManageOneTrade(json order) {
 
   auto validated_trade =
       Sorting::ValidTrade(item["slug"], item["tags"], VARS::Settings.log);
-  if (!validated_trade.has_value() &&
+  if ((!validated_trade.has_value() ||
+       VARS::Settings.plat - validated_trade->buy < 0) &&
       remote_trade.Tstate == VARS::tradeType::buy) {
-    cout << "[Deleting] no good trade found for: " << remote_trade.slug << endl;
-    json delete_status = OrderHandling::DeleteOrder(order["id"]);
-
-    if (!delete_status.empty() && delete_status["error"] == nullptr) {
-      Trds::trades.Remove(order["id"]);
-      return;
-    } else {
-      cout << "[Error] delete failed" << endl;
-      return;
-    }
+    cout << "[Attention] no good trade found for: " << remote_trade.slug
+         << endl;
+    OrderHandling::DeleteOrder(order["id"]);
+    return;
   }
-  if (validated_trade.has_value() &&
-      VARS::Settings.plat - validated_trade->buy >= 0) {
+  if (validated_trade.has_value()) {
     remote_trade.buy = validated_trade->buy;
     remote_trade.sell = validated_trade->sell;
-    cout << "[Updating] " << remote_trade.slug << endl;
 
-    json update_status = OrderHandling::UpdateOrder(order["id"], remote_trade);
-
-    if (!update_status.empty() && update_status["error"] == nullptr) {
-      Trds::trades.Set(order["id"], remote_trade);
-      return;
-    } else {
-      cout << "[Error] update failed" << endl;
-      return;
-    }
+    OrderHandling::UpdateOrder(order["id"], remote_trade);
+    return;
   }
 }
 
@@ -347,22 +326,30 @@ void HandleNewTrade(Trade trd) {
   }
 
   if (iter != map.end()) {
-    cout << "[Updating] " << trd.slug << endl;
-    UpdateOrder(iter->first, trd);
+    OrderHandling::UpdateOrder(iter->first, trd);
   } else {
-    cout << "[Posting] " << trd.slug << endl;
-    PostOrder(trd);
+    OrderHandling::PostOrder(trd);
   }
 }
 
-json DeleteOrder(std::string id) {
+bool DeleteOrder(std::string id) {
   if (id != "") {
-    return CurlReq::q
-        .Add([id] {
-          return CurlReq::__DELETE("https://api.warframe.market/v2/order/" +
-                                   id);
-        })
-        .get();
+    json response = CurlReq::q
+                        .Add([id] {
+                          return CurlReq::__DELETE(
+                              "https://api.warframe.market/v2/order/" + id);
+                        })
+                        .get();
+    if (!response.empty() && response["error"] == nullptr) {
+      cout << "[Delete] deleting: "
+           << StringOps::GetSlugFromId(response["data"]["itemId"].get<string>())
+           << endl;
+      Trds::trades.Remove(id);
+      return true;
+    } else {
+      cout << "[Error] removal failed" << endl;
+      return false;
+    }
   } else {
     json orders =
         CurlReq::q
@@ -373,17 +360,22 @@ json DeleteOrder(std::string id) {
                                      "Authorization: Bearer " + VARS::JWT});
             })
             .get();
-    for (json order : orders["data"]) {
-      CurlReq::q.Add([order] {
-        return CurlReq::__DELETE("https://api.warframe.market/v2/order/" +
-                                 (std::string)order["id"]);
-      });
+    for (json const &order : orders["data"]) {
+      cout << "[Delete] deleting: "
+           << StringOps::GetSlugFromId(order["itemId"].get<string>()) << endl;
+      json response = CurlReq::q
+                          .Add([order] {
+                            return CurlReq::__DELETE(
+                                "https://api.warframe.market/v2/order/" +
+                                (string)order["id"]);
+                          })
+                          .get();
     }
-    return json{};
+    return true;
   }
 }
 
-json UpdateOrder(string trade_id, Trade trd) {
+bool UpdateOrder(string trade_id, Trade trd) {
   json j;
   j["quantity"] = 1;
   j["visible"] = VARS::Settings.vt;
@@ -411,15 +403,25 @@ json UpdateOrder(string trade_id, Trade trd) {
     break;
   }
   }
-  return CurlReq::q
-      .Add([trade_id, j] {
-        return __PATCH("https://api.warframe.market/v2/order/" + trade_id,
-                       j.dump());
-      })
-      .get();
+  cout << "[Patch] updating: " << trd.slug << endl;
+  json response =
+      CurlReq::q
+          .Add([trade_id, j] {
+            return __PATCH("https://api.warframe.market/v2/order/" + trade_id,
+                           j.dump());
+          })
+          .get();
+
+  if (!response.empty() && response["error"] == nullptr) {
+    Trds::trades.Set(trade_id, trd);
+    return true;
+  } else {
+    cout << "[Error] update failed" << endl;
+    return false;
+  }
 }
 
-json PostOrder(Trade trd) {
+bool PostOrder(Trade trd) {
   json j;
   j["itemId"] = trd.id;
   j["type"] = (trd.Tstate == tradeType::buy) ? "buy" : "sell";
@@ -455,11 +457,20 @@ json PostOrder(Trade trd) {
     break;
   }
   }
-  return CurlReq::q
-      .Add([j] {
-        return CurlReq::__POST("https://api.warframe.market/v2/order",
-                               j.dump());
-      })
-      .get();
+  cout << "[Post] adding: " << trd.slug << endl;
+  json response = CurlReq::q
+                      .Add([j] {
+                        return CurlReq::__POST(
+                            "https://api.warframe.market/v2/order", j.dump());
+                      })
+                      .get();
+
+  if (!response.empty() && response["error"] == nullptr) {
+    Trds::trades.Add(response["data"]["id"], trd);
+    return true;
+  } else {
+    cout << "[Error] post failed" << endl;
+    return false;
+  }
 }
 } // namespace OrderHandling

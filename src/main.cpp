@@ -97,9 +97,10 @@ void WebLoop() {
     OrderHandling::DeleteOrder();
 
   while (VARS::thread_run) {
+    int pos = 1;
     for (json item : items["data"]) {
       auto trds = Trds::trades.Read();
-      if (items["data"].size() % trds.size() + 10 == 0 && trds.size() != 0)
+      if (pos % (trds.size() + 10) == 0.f && trds.size() != 0)
         OrderHandling::HandleAllTrades();
       auto trade =
           Sorting::ValidTrade(item["slug"], item["tags"], VARS::Settings.log);
@@ -108,7 +109,7 @@ void WebLoop() {
       else if (trade.has_value() && VARS::Settings.plat - trade.value().buy < 0)
         cout << "[Attention] balance is lower than buy price for: "
              << trade.value().slug << endl;
-      ;
+      pos++;
     }
   }
   CurlReq::disconnect();

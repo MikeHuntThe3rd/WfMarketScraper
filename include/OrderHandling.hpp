@@ -35,9 +35,9 @@ optional<local_trade> HandleSet(vector<local_trade> &trades,
                                 local_trade current, json orders);
 
 // web operations
-json PostOrder(Trade trd);
-json DeleteOrder(std::string id = "");
-json UpdateOrder(string trade_id, Trade trd);
+bool PostOrder(Trade trd);
+bool DeleteOrder(std::string id = "");
+bool UpdateOrder(string trade_id, Trade trd);
 
 // web trade manager functions
 json FindItem(string id);
