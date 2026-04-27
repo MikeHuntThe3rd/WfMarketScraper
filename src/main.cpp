@@ -1,6 +1,7 @@
 #include "main.hpp"
 #include "CLI11.hpp"
 #include "OrderHandling.hpp"
+#include "Trades.hpp"
 #include "VARS.hpp"
 #include <exception>
 #include <filesystem>
@@ -87,14 +88,19 @@ void Initialize() {
 
 void WebLoop() {
   CurlReq::setup();
-  ofstream del("out.log", ios::trunc);
-  del.close();
+  if (VARS::Settings.log) {
+    ofstream del("out.log", ios::trunc);
+    del.close();
+  }
   cout << "[Attention] current balance: " << VARS::Settings.plat << endl;
   if (VARS::Settings.dos)
     OrderHandling::DeleteOrder();
 
   while (VARS::thread_run) {
     for (json item : items["data"]) {
+      auto trds = Trds::trades.Read();
+      if (items["data"].size() % trds.size() + 10 == 0 && trds.size() != 0)
+        OrderHandling::HandleAllTrades();
       auto trade =
           Sorting::ValidTrade(item["slug"], item["tags"], VARS::Settings.log);
       if (trade.has_value() && VARS::Settings.plat - trade.value().buy >= 0)

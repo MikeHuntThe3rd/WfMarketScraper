@@ -2,6 +2,7 @@
 #include "CurlReq.hpp"
 #include "OrderHandling.hpp"
 #include "Sorting.hpp"
+#include "Trades.hpp"
 #include "VARS.hpp"
 #include <exception>
 #include <fstream>

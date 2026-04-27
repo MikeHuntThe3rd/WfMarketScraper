@@ -169,9 +169,9 @@ void EElogChecking() {
   vector<vector<string>> soldItems, boughtItems;
 
   // test append
-  ofstream fil("../../out.txt", ios::app);
-  fil << ifstream("../../inp.txt").rdbuf();
-  fil.close();
+  // ofstream fil("../../out.txt", ios::app);
+  // fil << ifstream("../../inp.txt").rdbuf();
+  // fil.close();
 
   while (VARS::thread_run) {
     // ifstream
@@ -289,7 +289,8 @@ void ManageOneTrade(json order) {
       return;
     }
   }
-  if (validated_trade.has_value()) {
+  if (validated_trade.has_value() &&
+      VARS::Settings.plat - validated_trade->buy >= 0) {
     remote_trade.buy = validated_trade->buy;
     remote_trade.sell = validated_trade->sell;
     cout << "[Updating] " << remote_trade.slug << endl;
