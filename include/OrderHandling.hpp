@@ -3,6 +3,7 @@
 #include "StringOps.hpp"
 #include "VARS.hpp"
 #include "json.hpp"
+#include "VDFparser.hpp"
 #include <string>
 #include <vector>
 
@@ -33,6 +34,8 @@ local_trade ParseSingleTrade(vector<string> data, VARS::tradeType type);
 void HandlelocalTrade(local_trade trd);
 optional<local_trade> HandleSet(vector<local_trade> &trades,
                                 local_trade current, json orders);
+
+optional<string> FindEElogPath();
 
 // web operations
 bool PostOrder(Trade trd);

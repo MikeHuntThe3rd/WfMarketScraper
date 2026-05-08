@@ -14,6 +14,54 @@
 
 namespace OrderHandling {
 
+#ifdef _WIN32
+#pragma once
+#include "VDFparser.hpp"
+#include <windows.h>
+
+optional<string> FindEElogPath(){
+  filesystem::path full_path;
+  HKEY key;
+  char steam_path[MAX_PATH], appdata_path[MAX_PATH];
+  DWORD steam_size = sizeof(steam_path), appdata_size = sizeof(appdata_path);
+  //try most common location
+  RegGetValueA(HKEY_CURRENT_USER, "Volatile Environment", "LOCALAPPDATA", RRF_RT_REG_SZ, nullptr, appdata_path, &appdata_size);
+  full_path = filesystem::path(appdata_path) / "Warframe" / "EE.log";
+  if(filesystem::exists(full_path)) return full_path.string();
+
+  //find the steam managed warframe folder in case EE.log wasnt in appdata
+  RegGetValueA(HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Valve\\Steam", "InstallPath", RRF_RT_REG_SZ, nullptr, steam_path, &steam_size);
+  filesystem::path vdf_path = filesystem::path(steam_path) / "config" / "libraryfolders.vdf";
+  if(!filesystem::exists(vdf_path)) return nullopt;
+
+  auto root = Parser::Parse<unordered_map>(ifstream(vdf_path));
+  if(!root.has_value() || root.value().childern.size() == 0) return nullopt;
+  auto lib_iter = root.value().childern.find("libraryfolders");
+  if(lib_iter == root.value().childern.end()) return nullopt;
+  auto vdf_obj = root.value().childern["libraryfolders"];
+
+  for(auto const &partition : vdf_obj.childern){
+    auto apps_iter = partition.second.childern.find("apps");
+    if(apps_iter == partition.second.childern.end()) continue;
+
+    for(auto const &app : apps_iter->second.values){
+      if(app.first == "230410"){
+        auto path_iter = partition.second.values.find("path");
+        if(path_iter == partition.second.values.end()) return nullopt;
+        full_path = filesystem::path(path_iter->second) / "steamapps" / "common" / "Warframe" / "EE.log";
+        if(filesystem::exists(full_path)) return full_path.string();
+        else return nullopt;
+      }
+    }
+  }
+  return nullopt;
+}
+#else
+optional<string> FindEElogPath(){
+  return "";
+}
+#endif
+
 local_trade ParseSingleTrade(vector<string> data, VARS::tradeType type) {
   vector<string> slug;
   int amount = 1;
@@ -156,7 +204,7 @@ void HandlelocalTrade(local_trade trd) {
 }
 
 void EElogChecking() {
-  std::ifstream EE("../../out.txt");
+  std::ifstream EE(VARS::Settings.ee_path);
   EE.seekg(0, std::ios::end);
   string line;
   vector<vector<string>> soldItems, boughtItems;

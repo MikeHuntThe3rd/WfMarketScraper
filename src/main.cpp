@@ -86,6 +86,24 @@ void Initialize() {
               .get();
 }
 
+void CheckForEElog(){
+  if(VARS::Settings.ee_path == ""){
+    optional<string> res = OrderHandling::FindEElogPath();
+    if(res.has_value()){
+      VARS::Settings.ee_path = res.value();
+
+      json temp = json::parse(ifstream("settings.json"));
+      temp["ee_path"] = res.value();
+      ofstream sett("settings.json", ios::trunc);
+      sett << temp.dump(4);
+      
+      return;
+    }
+    else throw VARS::costum_exit{1, "couldn't find EE.log automatically consider setting it manually"};
+  }
+  else if(!filesystem::exists(VARS::Settings.ee_path)) throw VARS::costum_exit{1, "the provided path for EE.log is invalid"};
+}
+
 void WebLoop() {
   CurlReq::setup();
   if (VARS::Settings.log) {
@@ -142,10 +160,12 @@ void Run(CLI::App *run, optional<string> jwt) {
     CurlReq::disconnect();
   } else if (run->got_subcommand("local")) {
     Initialize();
+    CheckForEElog();
     OrderHandling::EElogChecking();
     CurlReq::disconnect();
   } else {
     Initialize();
+    CheckForEElog();
     std::thread InGameTrades(OrderHandling::EElogChecking);
     WebLoop();
     InGameTrades.join();
@@ -188,11 +208,13 @@ int main(int argc, char *argv[]) {
         "reset_all", "resets all values to their default states");
     auto show_all = set->add_subcommand("show_all", "shows all values");
     AddCommandtriplex<string>(set, "jwt", "your personal jwt token");
+    AddCommandtriplex<string>(set, "ee_path", "the path for the local EE.log file");
     AddCommandtriplex<long long int>(
         set, "margin", "the minimum margin amount required for a good trade");
     AddCommandtriplex<long long int>(
         set, "freq", "the minimum trade frequency required for a good trade");
     AddCommandtriplex<long long int>(set, "plat", "your current known balance");
+    AddCommandtriplex<long long int>(set, "offset", "the offset applied to trades");
     AddCommandtriplex<bool>(set, "log", "enable/disable logging");
     AddCommandtriplex<bool>(
         set, "dos",

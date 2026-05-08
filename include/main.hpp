@@ -22,6 +22,7 @@ using namespace std;
 void CreateSettings();
 void LoadSettings();
 void Initialize();
+void CheckForEElog();
 void WebLoop();
 void Run(CLI::App *run, optional<string> jwt);
 void Set(CLI::App *set);
