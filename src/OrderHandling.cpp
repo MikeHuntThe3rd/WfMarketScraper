@@ -64,7 +64,6 @@ optional<string> FindEElogPath(){
 
 local_trade ParseSingleTrade(vector<string> data, VARS::tradeType type) {
   vector<string> slug;
-  cout << "single parse => data size: " << data.size() << ", first element: " << *data.begin() << endl;
   int amount = 1;
   for (int i = 0; i < data.size(); i++) {
     if (data[i] == "Platinum") {
@@ -226,14 +225,8 @@ void EElogChecking() {
     while (getline(EE, line)) {
       // line data gathering
       if (!line.empty() && line.back() == '\r') line.pop_back();
-      //TEST!!!!!!---------
-      if(CheckUnlocked.first) {
-        for (unsigned char c : line){
-          if (c < 32) cout << "<" << (int)c << ">";
-          else cout << c;
-          cout << "\n";
-        }
-      }
+      if (!line.empty() && line.front() == '\r') line.erase(0, 1);
+
       string element = "";
       stringstream space{line}, comma{line};
       vector<string> spaceSeperated, commaSeperated;
@@ -287,7 +280,6 @@ void EElogChecking() {
                               })
                           .get();
         Trds::trades.Sync(orders);
-        cout << "parsing" << endl;
         auto trds = ParseLocalTrades(soldItems, boughtItems, orders);
 
         cout << "executing" << endl;
