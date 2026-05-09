@@ -64,6 +64,7 @@ optional<string> FindEElogPath(){
 
 local_trade ParseSingleTrade(vector<string> data, VARS::tradeType type) {
   vector<string> slug;
+  cout << "single parse => data size: " << data.size() << ", first element: " << *data.begin() << endl;
   int amount = 1;
   for (int i = 0; i < data.size(); i++) {
     if (data[i] == "Platinum") {
@@ -224,6 +225,15 @@ void EElogChecking() {
     // file check by lines
     while (getline(EE, line)) {
       // line data gathering
+      if (!line.empty() && line.back() == '\r') line.pop_back();
+      //TEST!!!!!!---------
+      if(CheckUnlocked.first) {
+        for (unsigned char c : line){
+          if (c < 32) cout << "<" << (int)c << ">";
+          else cout << c;
+          cout << "\n";
+        }
+      }
       string element = "";
       stringstream space{line}, comma{line};
       vector<string> spaceSeperated, commaSeperated;
@@ -232,66 +242,75 @@ void EElogChecking() {
       commaSeperated = StringOps::SeperateBy(comma, element, ',');
 
       // logic
-      if (line.find("and will receive from") != std::string::npos) {
-        CheckUnlocked.second = VARS::tradeType::buy;
-        goto trade_type_swap;
-      }
+      if(line.empty()) continue;
 
-      if (commaSeperated.size() > 1 && CheckUnlocked.first) {
-        CheckUnlocked.first = false;
-        std::stringstream ss{*commaSeperated.begin()};
-        std::string ln = "";
-
-        boughtItems.push_back(StringOps::SeperateBy(ss, ln, ' '));
-      }
-
-      if (CheckUnlocked.first && line.length() > 0 &&
-          CheckUnlocked.second == VARS::tradeType::sell)
-        soldItems.push_back(spaceSeperated);
-      else if (CheckUnlocked.first && line.length() > 0 &&
-               CheckUnlocked.second == VARS::tradeType::buy)
-        boughtItems.push_back(spaceSeperated);
-
-      // state checking
       if (line.find("description=Are you sure you want to accept this trade? "
                     "You are offering:") != std::string::npos) {
         CheckUnlocked = {true, VARS::tradeType::sell};
         soldItems.clear();
         boughtItems.clear();
+        continue;
       }
 
+      if (line.find("and will receive from") != std::string::npos) {
+        CheckUnlocked.second = VARS::tradeType::buy;
+        continue;
+      }
+
+      if (commaSeperated.size() > 1 && CheckUnlocked.first) {
+        CheckUnlocked = {false, VARS::tradeType::sell};
+        std::stringstream ss{*commaSeperated.begin()};
+        std::string ln = "";
+
+        boughtItems.push_back(StringOps::SeperateBy(ss, ln, ' '));
+        continue;
+      }
+
+      
       if (line.find("SendResult_MENU_CANCEL()") != string::npos) {
         CheckUnlocked = {false, VARS::tradeType::sell};
         soldItems.clear();
         boughtItems.clear();
+        continue;
       }
-
+      
       // closing the check on trade success
       if (line.find("description=The trade was successful!") !=
-          std::string::npos) {
+      std::string::npos) {
         json orders = CurlReq::q
                           .Add([] {
                             return CurlReq::__GET(
-                                "https://api.warframe.market/v2/orders/my",
-                                {"Content-Type: application/json",
-                                 "Accept: application/json",
-                                 "Authorization: Bearer " + VARS::JWT});
-                          })
+                              "https://api.warframe.market/v2/orders/my",
+                              {"Content-Type: application/json",
+                                "Accept: application/json",
+                                "Authorization: Bearer " + VARS::JWT});
+                              })
                           .get();
         Trds::trades.Sync(orders);
-
+        cout << "parsing" << endl;
         auto trds = ParseLocalTrades(soldItems, boughtItems, orders);
+
+        cout << "executing" << endl;
         for (auto const &trd : trds) {
           HandlelocalTrade(trd);
         }
-
+        
         // data resetting
         CheckUnlocked = {false, VARS::tradeType::sell};
         soldItems.clear();
         boughtItems.clear();
+        continue;
       }
-    trade_type_swap:;
+
+      if (CheckUnlocked.first &&
+          CheckUnlocked.second == VARS::tradeType::sell)
+        soldItems.push_back(spaceSeperated);
+      else if (CheckUnlocked.first &&
+               CheckUnlocked.second == VARS::tradeType::buy)
+        boughtItems.push_back(spaceSeperated);
     }
+
+    //wait 334 ms between checks
     CurlReq::wait();
   }
 }
