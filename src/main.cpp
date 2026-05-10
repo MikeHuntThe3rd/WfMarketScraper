@@ -30,27 +30,27 @@ void AddCommandtriplex(CLI::App *set, string name, string help) {
     json setts = json::parse(ifs);
 
     if (*show) {
-      cout << name << " value: " << setts[name] << endl;
+      cout << name << "[Data] value: " << setts[name] << endl;
     } else if (*reset) {
-      cout << "resetting: " << name << endl;
+      cout << "[Attention] resetting: " << name << endl;
       setts[name] = VARS::DefSettings[name];
       ofstream set_file("settings.json", ios::trunc);
       set_file << setts.dump(4);
     } else if (val->has_value()) {
-      cout << "setting: " << name << endl
+      cout << "[Attention] setting: " << name << endl
            << "to: " << boolalpha << val->value() << noboolalpha << endl;
       setts[name] = val->value();
       ofstream set_file("settings.json", ios::trunc);
       set_file << setts.dump(4);
     } else {
-      throw VARS::costum_exit{1, "idk what triggers this yet"};
+      throw VARS::costum_exit{1, "[Error] unknown option"};
     }
   });
 }
 
 void CreateSettings() {
   if (!filesystem::exists("settings.json")) {
-    cout << "settings.json generated with default settings" << endl;
+    cout << "[Attention] settings.json generated with default settings" << endl;
     ofstream settings_gen("settings.json");
     settings_gen << VARS::DefSettings.dump(4);
   }
@@ -139,8 +139,7 @@ void Run(CLI::App *run, optional<string> jwt) {
   if (!jwt.has_value() && VARS::Settings.jwt.size() == 0)
     throw VARS::costum_exit{1, "jwt isnt saved or given as a parameter"};
   else if (jwt.has_value() && VARS::Settings.jwt.size() == 0) {
-    cout << "using JWT from cli" << endl
-         << "JWT will not be saved anywhere" << endl;
+    cout << "[Attention] using JWT from cli it will not be saved anywhere" << endl;
     VARS::JWT = jwt.value();
   } else
     VARS::JWT = VARS::Settings.jwt;

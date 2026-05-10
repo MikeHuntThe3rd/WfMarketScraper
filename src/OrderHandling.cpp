@@ -282,7 +282,6 @@ void EElogChecking() {
         Trds::trades.Sync(orders);
         auto trds = ParseLocalTrades(soldItems, boughtItems, orders);
 
-        cout << "executing" << endl;
         for (auto const &trd : trds) {
           HandlelocalTrade(trd);
         }
@@ -325,7 +324,6 @@ void ManageOneTrade(json order) {
   }
   Trade remote_trade = iter->second;
   json item = FindItem(remote_trade.id);
-
   auto validated_trade =
       Sorting::ValidTrade(item["slug"], item["tags"], VARS::Settings.log);
   if ((!validated_trade.has_value() ||

@@ -18,7 +18,7 @@ string GetIdFromSlug(string slug) {
     if (curr["slug"] == slug)
       return curr["id"];
   }
-  cout << "couldn't find id for: " << "|" << slug << "|" << std::endl;
+  cout << "[Error] couldn't find id for: " << "|" << slug << "|" << std::endl;
   return "0";
 }
 
@@ -27,7 +27,7 @@ string GetSlugFromId(string id) {
     if (curr["id"] == id)
       return curr["slug"];
   }
-  cout << "couldn't find slug for: " << "|" << id << "|" << std::endl;
+  cout << "[Error] couldn't find slug for: " << "|" << id << "|" << std::endl;
   return "0";
 }
 

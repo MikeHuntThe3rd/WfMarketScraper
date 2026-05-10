@@ -48,7 +48,6 @@ json __GET(std::string https, std::vector<std::string> headers) {
     response_string.clear();
     return json{};
   } else if (response_string.length() == 0) {
-    std::cout << "no result" << std::endl;
     return json{};
   } else {
     try {
@@ -56,7 +55,6 @@ json __GET(std::string https, std::vector<std::string> headers) {
       response_string.clear();
       return data;
     } catch (nlohmann::json::parse_error &err) {
-      std::cout << err.what();
       return json{};
     }
   }
