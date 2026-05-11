@@ -84,35 +84,24 @@ void Initialize() {
                 return CurlReq::__GET("https://api.warframe.market/v2/items");
               })
               .get();
-  json trades_remote =
-      CurlReq::q
-          .Add([] {
-            return CurlReq::__GET("https://api.warframe.market/v2/orders/my",
-                                  {"Content-Type: application/json",
-                                   "Accept: application/json",
-                                   "Authorization: Bearer " + VARS::JWT});
-          })
-          .get();
-  Trds::trades.Sync(trades_remote);
 }
 
-void CheckForEElog() {
-  if (VARS::Settings.ee_path == "") {
+void CheckForEElog(){
+  if(VARS::Settings.ee_path == ""){
     optional<string> res = OrderHandling::FindEElogPath();
-    if (res.has_value()) {
+    if(res.has_value()){
       VARS::Settings.ee_path = res.value();
 
       json temp = json::parse(ifstream("settings.json"));
       temp["ee_path"] = res.value();
       ofstream sett("settings.json", ios::trunc);
       sett << temp.dump(4);
-
+      
       return;
-    } else
-      throw VARS::costum_exit{
-          1, "couldn't find EE.log automatically consider setting it manually"};
-  } else if (!filesystem::exists(VARS::Settings.ee_path))
-    throw VARS::costum_exit{1, "the provided path for EE.log is invalid"};
+    }
+    else throw VARS::costum_exit{1, "couldn't find EE.log automatically consider setting it manually"};
+  }
+  else if(!filesystem::exists(VARS::Settings.ee_path)) throw VARS::costum_exit{1, "the provided path for EE.log is invalid"};
 }
 
 void WebLoop() {
@@ -150,8 +139,7 @@ void Run(CLI::App *run, optional<string> jwt) {
   if (!jwt.has_value() && VARS::Settings.jwt.size() == 0)
     throw VARS::costum_exit{1, "jwt isnt saved or given as a parameter"};
   else if (jwt.has_value() && VARS::Settings.jwt.size() == 0) {
-    cout << "[Attention] using JWT from cli it will not be saved anywhere"
-         << endl;
+    cout << "[Attention] using JWT from cli it will not be saved anywhere" << endl;
     VARS::JWT = jwt.value();
   } else
     VARS::JWT = VARS::Settings.jwt;
@@ -219,15 +207,13 @@ int main(int argc, char *argv[]) {
         "reset_all", "resets all values to their default states");
     auto show_all = set->add_subcommand("show_all", "shows all values");
     AddCommandtriplex<string>(set, "jwt", "your personal jwt token");
-    AddCommandtriplex<string>(set, "ee_path",
-                              "the path for the local EE.log file");
+    AddCommandtriplex<string>(set, "ee_path", "the path for the local EE.log file");
     AddCommandtriplex<long long int>(
         set, "margin", "the minimum margin amount required for a good trade");
     AddCommandtriplex<long long int>(
         set, "freq", "the minimum trade frequency required for a good trade");
     AddCommandtriplex<long long int>(set, "plat", "your current known balance");
-    AddCommandtriplex<long long int>(set, "offset",
-                                     "the offset applied to trades");
+    AddCommandtriplex<long long int>(set, "offset", "the offset applied to trades");
     AddCommandtriplex<bool>(set, "log", "enable/disable logging");
     AddCommandtriplex<bool>(
         set, "dos",
