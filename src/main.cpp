@@ -84,6 +84,17 @@ void Initialize() {
                 return CurlReq::__GET("https://api.warframe.market/v2/items");
               })
               .get();
+
+  json trades_remote =
+      CurlReq::q
+          .Add([] {
+            return CurlReq::__GET("https://api.warframe.market/v2/orders/my",
+                                  {"Content-Type: application/json",
+                                   "Accept: application/json",
+                                   "Authorization: Bearer " + VARS::JWT});
+          })
+          .get();
+  Trds::trades.Sync(trades_remote);
 }
 
 void CheckForEElog(){

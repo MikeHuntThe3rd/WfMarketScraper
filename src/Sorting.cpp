@@ -57,6 +57,7 @@ bool Frequency(itemType type, std::optional<std::any> data) {
     return false;
   }
 }
+
 std::optional<Trade> RankBasedMargin(json orders) {
   unordered_map<int, VARS::rank> ranks;
   auto addIfNew = [&ranks](int level) -> void {
@@ -121,10 +122,12 @@ std::optional<Trade> RankBasedMargin(json orders) {
     return std::nullopt;
   }
 }
+
 std::optional<Trade> BasicMargin(json orders) {
   int buy = std::numeric_limits<int>::min();
   int sell = std::numeric_limits<int>::max();
   bool buy_trade = false, sell_trade = false;
+  
   for (json curr : orders["data"]) {
     if (curr["user"]["status"] == "ingame" &&
         curr["platinum"].get<int>() - VARS::Settings.offset < sell &&
@@ -153,6 +156,7 @@ std::optional<Trade> BasicMargin(json orders) {
     return std::nullopt;
   }
 }
+
 std::optional<Trade> AyatanMargin(json orders) {
   std::vector<ayatan_sculpture> sculptures;
 
@@ -244,6 +248,7 @@ std::optional<Trade> AyatanMargin(json orders) {
     return nullopt;
   }
 }
+
 optional<Trade> ValidTrade(string item, vector<string> tags, bool log) {
   slug = item;
   optional<Trade> __return;
