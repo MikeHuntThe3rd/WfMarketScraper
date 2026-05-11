@@ -109,8 +109,7 @@ std::optional<Trade> RankBasedMargin(json orders) {
   } else
     logfile << "no good mod trade found: " << std::endl;
 
-  if (value_found && margin > VARS::Settings.margin &&
-      Frequency(itemType::mod, level)) {
+  if (value_found && Frequency(itemType::mod, level)) {
     auto trd = Trade{slug,          StringOps::GetIdFromSlug(slug),
                      best.buy,      best.sell,
                      itemType::mod, tradeType::buy,
@@ -140,8 +139,7 @@ std::optional<Trade> BasicMargin(json orders) {
     }
   }
   logfile << "margin: " << sell - buy << std::endl;
-  if ((sell_trade && buy_trade) && sell - buy > VARS::Settings.margin &&
-      Frequency(itemType::basic)) {
+  if ((sell_trade && buy_trade) && Frequency(itemType::basic)) {
     return Trade{slug,
                  StringOps::GetIdFromSlug(slug),
                  buy,
@@ -231,8 +229,7 @@ std::optional<Trade> AyatanMargin(json orders) {
   else
     logfile << "best is empty" << endl;
 
-  if (best.has_value() && margin > VARS::Settings.margin &&
-      Frequency(itemType::Ayatan, best.value())) {
+  if (best.has_value() && Frequency(itemType::Ayatan, best.value())) {
     return Trade{slug,
                  StringOps::GetIdFromSlug(slug),
                  best.value().buy,
@@ -262,11 +259,15 @@ optional<Trade> ValidTrade(string item, vector<string> tags, bool log) {
     logfile << "slug: " << slug << std::endl;
 
     auto result = AyatanMargin(orders);
-    if (result.has_value()) {
+    if (result.has_value() &&
+        (result.value().sell - VARS::Settings.offset) -
+                (result.value().buy + VARS::Settings.offset) >
+            VARS::Settings.margin) {
       logfile << "[Success] found good trade for: " << slug << std::endl;
       cout << "[Success] found good trade for: " << slug << std::endl;
-    }
-    __return = result;
+      __return = result;
+    } else
+      __return = nullopt;
 
   } else if (std::find(tags.begin(), tags.end(), "mod") != tags.end() &&
              std::find(tags.begin(), tags.end(), "veiled_riven") ==
@@ -275,22 +276,30 @@ optional<Trade> ValidTrade(string item, vector<string> tags, bool log) {
     logfile << "slug: " << slug << std::endl;
 
     auto result = RankBasedMargin(orders);
-    if (result.has_value()) {
+    if (result.has_value() &&
+        (result.value().sell - VARS::Settings.offset) -
+                (result.value().buy + VARS::Settings.offset) >
+            VARS::Settings.margin) {
       logfile << "[Success] found good trade for: " << slug << std::endl;
       cout << "[Success] found good trade for: " << slug << std::endl;
-    }
+      __return = result;
+    } else
+      __return = nullopt;
 
-    __return = result;
   } else {
     logfile << "==========BASIC CHECK==========" << std::endl;
     logfile << "slug: " << slug << std::endl;
 
     auto result = BasicMargin(orders);
-    if (result.has_value()) {
+    if (result.has_value() &&
+        (result.value().sell - VARS::Settings.offset) -
+                (result.value().buy + VARS::Settings.offset) >
+            VARS::Settings.margin) {
       logfile << "[Success] found good trade for: " << slug << std::endl;
       cout << "[Success] found good trade for: " << slug << std::endl;
-    }
-    __return = result;
+      __return = result;
+    } else
+      __return = nullopt;
   }
   logfile.close();
   return __return;
