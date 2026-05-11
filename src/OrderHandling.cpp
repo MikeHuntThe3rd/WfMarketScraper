@@ -19,47 +19,57 @@ namespace OrderHandling {
 #include "VDFparser.hpp"
 #include <windows.h>
 
-optional<string> FindEElogPath(){
+optional<string> FindEElogPath() {
   filesystem::path full_path;
   HKEY key;
   char steam_path[MAX_PATH], appdata_path[MAX_PATH];
   DWORD steam_size = sizeof(steam_path), appdata_size = sizeof(appdata_path);
-  //try most common location
-  RegGetValueA(HKEY_CURRENT_USER, "Volatile Environment", "LOCALAPPDATA", RRF_RT_REG_SZ, nullptr, appdata_path, &appdata_size);
+  // try most common location
+  RegGetValueA(HKEY_CURRENT_USER, "Volatile Environment", "LOCALAPPDATA",
+               RRF_RT_REG_SZ, nullptr, appdata_path, &appdata_size);
   full_path = filesystem::path(appdata_path) / "Warframe" / "EE.log";
-  if(filesystem::exists(full_path)) return full_path.string();
+  if (filesystem::exists(full_path))
+    return full_path.string();
 
-  //find the steam managed warframe folder in case EE.log wasnt in appdata
-  RegGetValueA(HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Valve\\Steam", "InstallPath", RRF_RT_REG_SZ, nullptr, steam_path, &steam_size);
-  filesystem::path vdf_path = filesystem::path(steam_path) / "config" / "libraryfolders.vdf";
-  if(!filesystem::exists(vdf_path)) return nullopt;
+  // find the steam managed warframe folder in case EE.log wasnt in appdata
+  RegGetValueA(HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Valve\\Steam",
+               "InstallPath", RRF_RT_REG_SZ, nullptr, steam_path, &steam_size);
+  filesystem::path vdf_path =
+      filesystem::path(steam_path) / "config" / "libraryfolders.vdf";
+  if (!filesystem::exists(vdf_path))
+    return nullopt;
 
   auto root = Parser::Parse<unordered_map>(ifstream(vdf_path));
-  if(!root.has_value() || root.value().childern.size() == 0) return nullopt;
+  if (!root.has_value() || root.value().childern.size() == 0)
+    return nullopt;
   auto lib_iter = root.value().childern.find("libraryfolders");
-  if(lib_iter == root.value().childern.end()) return nullopt;
+  if (lib_iter == root.value().childern.end())
+    return nullopt;
   auto vdf_obj = root.value().childern["libraryfolders"];
 
-  for(auto const &partition : vdf_obj.childern){
+  for (auto const &partition : vdf_obj.childern) {
     auto apps_iter = partition.second.childern.find("apps");
-    if(apps_iter == partition.second.childern.end()) continue;
+    if (apps_iter == partition.second.childern.end())
+      continue;
 
-    for(auto const &app : apps_iter->second.values){
-      if(app.first == "230410"){
+    for (auto const &app : apps_iter->second.values) {
+      if (app.first == "230410") {
         auto path_iter = partition.second.values.find("path");
-        if(path_iter == partition.second.values.end()) return nullopt;
-        full_path = filesystem::path(path_iter->second) / "steamapps" / "common" / "Warframe" / "EE.log";
-        if(filesystem::exists(full_path)) return full_path.string();
-        else return nullopt;
+        if (path_iter == partition.second.values.end())
+          return nullopt;
+        full_path = filesystem::path(path_iter->second) / "steamapps" /
+                    "common" / "Warframe" / "EE.log";
+        if (filesystem::exists(full_path))
+          return full_path.string();
+        else
+          return nullopt;
       }
     }
   }
   return nullopt;
 }
 #else
-optional<string> FindEElogPath(){
-  return "";
-}
+optional<string> FindEElogPath() { return ""; }
 #endif
 
 local_trade ParseSingleTrade(vector<string> data, VARS::tradeType type) {
@@ -224,8 +234,10 @@ void EElogChecking() {
     // file check by lines
     while (getline(EE, line)) {
       // line data gathering
-      if (!line.empty() && line.back() == '\r') line.pop_back();
-      if (!line.empty() && line.front() == '\r') line.erase(0, 1);
+      if (!line.empty() && line.back() == '\r')
+        line.pop_back();
+      if (!line.empty() && line.front() == '\r')
+        line.erase(0, 1);
 
       string element = "";
       stringstream space{line}, comma{line};
@@ -235,7 +247,8 @@ void EElogChecking() {
       commaSeperated = StringOps::SeperateBy(comma, element, ',');
 
       // logic
-      if(line.empty()) continue;
+      if (line.empty())
+        continue;
 
       if (line.find("description=Are you sure you want to accept this trade? "
                     "You are offering:") != std::string::npos) {
@@ -259,25 +272,24 @@ void EElogChecking() {
         continue;
       }
 
-      
       if (line.find("SendResult_MENU_CANCEL()") != string::npos) {
         CheckUnlocked = {false, VARS::tradeType::sell};
         soldItems.clear();
         boughtItems.clear();
         continue;
       }
-      
+
       // closing the check on trade success
       if (line.find("description=The trade was successful!") !=
-      std::string::npos) {
+          std::string::npos) {
         json orders = CurlReq::q
                           .Add([] {
                             return CurlReq::__GET(
-                              "https://api.warframe.market/v2/orders/my",
-                              {"Content-Type: application/json",
-                                "Accept: application/json",
-                                "Authorization: Bearer " + VARS::JWT});
-                              })
+                                "https://api.warframe.market/v2/orders/my",
+                                {"Content-Type: application/json",
+                                 "Accept: application/json",
+                                 "Authorization: Bearer " + VARS::JWT});
+                          })
                           .get();
         Trds::trades.Sync(orders);
         auto trds = ParseLocalTrades(soldItems, boughtItems, orders);
@@ -285,7 +297,7 @@ void EElogChecking() {
         for (auto const &trd : trds) {
           HandlelocalTrade(trd);
         }
-        
+
         // data resetting
         CheckUnlocked = {false, VARS::tradeType::sell};
         soldItems.clear();
@@ -293,15 +305,14 @@ void EElogChecking() {
         continue;
       }
 
-      if (CheckUnlocked.first &&
-          CheckUnlocked.second == VARS::tradeType::sell)
+      if (CheckUnlocked.first && CheckUnlocked.second == VARS::tradeType::sell)
         soldItems.push_back(spaceSeperated);
       else if (CheckUnlocked.first &&
                CheckUnlocked.second == VARS::tradeType::buy)
         boughtItems.push_back(spaceSeperated);
     }
 
-    //wait 334 ms between checks
+    // wait 334 ms between checks
     CurlReq::wait();
   }
 }
@@ -329,7 +340,7 @@ void ManageOneTrade(json order) {
   if ((!validated_trade.has_value() ||
        VARS::Settings.plat - validated_trade->buy < 0) &&
       remote_trade.Tstate == VARS::tradeType::buy) {
-    cout << "[Attention] no good trade found for: " << remote_trade.slug
+    cout << "[Attention] this trade became invalid: " << remote_trade.slug
          << endl;
     OrderHandling::DeleteOrder(order["id"]);
     return;
