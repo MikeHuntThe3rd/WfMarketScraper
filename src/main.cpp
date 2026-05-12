@@ -30,7 +30,7 @@ void AddCommandtriplex(CLI::App *set, string name, string help) {
     json setts = json::parse(ifs);
 
     if (*show) {
-      cout << name << "[Data] value: " << setts[name] << endl;
+      cout << "[Data] " << name << " value: " << setts[name] << endl;
     } else if (*reset) {
       cout << "[Attention] resetting: " << name << endl;
       setts[name] = VARS::DefSettings[name];
