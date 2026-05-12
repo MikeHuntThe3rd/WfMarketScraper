@@ -214,7 +214,7 @@ void HandlelocalTrade(local_trade trd) {
 }
 
 void EElogChecking() {
-  std::ifstream EE(VARS::Settings.ee_path);
+  std::ifstream EE("EE.log");
   EE.seekg(0, std::ios::end);
   string line;
   vector<vector<string>> soldItems, boughtItems;

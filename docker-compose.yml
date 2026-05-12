@@ -1,0 +1,13 @@
+services:
+  scraper:
+    image: scraper
+    stdin_open: true
+    tty: true
+    environment:
+      - PATH=/app:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    volumes:
+      - replace_this_with_absolute_path_to_your_EE.log_file:/app/data/EE.log:ro
+      - scraper_data:/app/data
+
+volumes:
+  scraper_data:

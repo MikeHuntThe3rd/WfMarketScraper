@@ -40,10 +40,9 @@ struct Settings_template {
   bool vt;
   bool dos;
   string jwt;
-  string ee_path;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Settings_template, margin, freq, plat,
-                                   offset, log, vt, dos, jwt, ee_path)
+                                   offset, log, vt, dos, jwt)
 struct rank // stats for a mod at a certain level (only different mod ranks are
             // saved)
 {
@@ -87,6 +86,6 @@ inline json items;
 inline std::string JWT = "";
 inline const json DefSettings{{"margin", 10}, {"freq", 96},   {"plat", 0},
                               {"offset", 1},  {"log", false}, {"vt", false},
-                              {"dos", false}, {"jwt", ""}, {"ee_path", ""}};
+                              {"dos", false}, {"jwt", ""}};
 inline Settings_template Settings;
 } // namespace VARS
