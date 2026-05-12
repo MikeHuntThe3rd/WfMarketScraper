@@ -83,7 +83,8 @@ struct Task {
 };
 // global generics
 inline json items;
-inline std::string JWT = "";
+inline string JWT = "";
+inline string user_id = "";
 inline const json DefSettings{{"margin", 10}, {"freq", 96},   {"plat", 0},
                               {"offset", 1},  {"log", false}, {"vt", false},
                               {"dos", false}, {"jwt", ""}};

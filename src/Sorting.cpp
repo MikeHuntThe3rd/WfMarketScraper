@@ -78,13 +78,13 @@ std::optional<Trade> RankBasedMargin(json orders) {
 
     if (curr["user"]["status"] == "ingame" &&
         curr["platinum"].get<int>() - VARS::Settings.offset < value->sell &&
-        curr["type"] == "sell") {
+        curr["type"] == "sell" && curr["user"]["id"].get<string>() != VARS::user_id) {
       value->sell_trade = true;
       value->sell = curr["platinum"].get<int>() - VARS::Settings.offset;
     }
     if (curr["user"]["status"] == "ingame" &&
         curr["platinum"].get<int>() + VARS::Settings.offset > value->buy &&
-        curr["type"] == "buy") {
+        curr["type"] == "buy" && curr["user"]["id"].get<string>() != VARS::user_id) {
       value->buy_trade = true;
       value->buy = curr["platinum"].get<int>() + VARS::Settings.offset;
     }
@@ -131,13 +131,13 @@ std::optional<Trade> BasicMargin(json orders) {
   for (json curr : orders["data"]) {
     if (curr["user"]["status"] == "ingame" &&
         curr["platinum"].get<int>() - VARS::Settings.offset < sell &&
-        curr["type"] == "sell") {
+        curr["type"] == "sell" && curr["user"]["id"].get<string>() != VARS::user_id) {
       sell = curr["platinum"].get<int>() - VARS::Settings.offset;
       sell_trade = true;
     }
     if (curr["user"]["status"] == "ingame" &&
         curr["platinum"].get<int>() + VARS::Settings.offset > buy &&
-        curr["type"] == "buy") {
+        curr["type"] == "buy" && curr["user"]["id"].get<string>() != VARS::user_id) {
       buy = curr["platinum"].get<int>() + VARS::Settings.offset;
       buy_trade = true;
     }
@@ -209,11 +209,11 @@ std::optional<Trade> AyatanMargin(json orders) {
 
     addIfNew(cyan, amber);
 
-    if (order["user"]["status"] == "ingame" && order["type"] == "sell") {
+    if (order["user"]["status"] == "ingame" && order["type"] == "sell" && order["user"]["id"].get<string>() != VARS::user_id) {
       priceCompare(cyan, amber, tradeType::sell,
                    order["platinum"].get<int>() - VARS::Settings.offset);
     }
-    if (order["user"]["status"] == "ingame" && order["type"] == "buy") {
+    if (order["user"]["status"] == "ingame" && order["type"] == "buy" && order["user"]["id"].get<string>() != VARS::user_id) {
       priceCompare(cyan, amber, tradeType::buy,
                    order["platinum"].get<int>() + VARS::Settings.offset);
     }

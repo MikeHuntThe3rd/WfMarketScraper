@@ -70,7 +70,7 @@ void Initialize() {
   json jwt_status =
       CurlReq::q
           .Add([] {
-            return CurlReq::__GET("https://api.warframe.market/v2/orders/my",
+            return CurlReq::__GET("https://api.warframe.market/v2/me",
                                   {"Content-Type: application/json",
                                    "Accept: application/json",
                                    "Authorization: Bearer " + VARS::JWT});
@@ -79,6 +79,7 @@ void Initialize() {
   if (jwt_status["error"] != nullptr)
     throw VARS::costum_exit{
         1, "the provided jwt couldn't be linked to an account"};
+  else VARS::user_id = jwt_status["data"]["id"].get<string>();
   items = CurlReq::q
               .Add([] {
                 return CurlReq::__GET("https://api.warframe.market/v2/items");
