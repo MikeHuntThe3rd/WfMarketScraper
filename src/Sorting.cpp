@@ -313,6 +313,7 @@ void SetBestTradePrice(VARS::Trade &trd){
                     })
                     .get();
   
+  int sell = numeric_limits<int>::max(), buy = numeric_limits<int>::min();;
   for(json const &order : orders["data"]){
     if(order["user"]["status"] != "ingame" || order["user"]["id"] == VARS::user_id) continue;
 
@@ -330,13 +331,15 @@ void SetBestTradePrice(VARS::Trade &trd){
       break;
     }
 
-    if(order["type"] == "sell" && order["platinum"] <= trd.sell){
-      trd.sell = order["platinum"].get<int>() - VARS::Settings.offset;
+    if(order["type"] == "sell" && order["platinum"] <= sell){
+      sell = order["platinum"].get<int>() - VARS::Settings.offset;
     }
-    if(order["type"] == "buy" && order["platinum"] >= trd.buy){
-      trd.buy = order["platinum"].get<int>() + VARS::Settings.offset;
+    if(order["type"] == "buy" && order["platinum"] >= buy){
+      buy = order["platinum"].get<int>() + VARS::Settings.offset;
     }
   }
+  if(sell != numeric_limits<int>::max()) trd.sell = sell;
+  if(buy != numeric_limits<int>::min()) trd.buy = buy;
 }
 
 } // namespace Sorting
