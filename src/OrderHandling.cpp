@@ -333,28 +333,36 @@ void ManageOneTrade(json order) {
          << endl;
     return;
   }
+  
   Trade remote_trade = iter->second;
-  json item = FindItem(remote_trade.id);
-  auto validated_trade =
-      Sorting::ValidTrade(item["slug"], item["tags"], VARS::Settings.log);
-  if ((!validated_trade.has_value() ||
-       VARS::Settings.plat - validated_trade->buy < 0) &&
-      remote_trade.Tstate == VARS::tradeType::buy) {
-    cout << "[Attention] this trade became invalid: " << remote_trade.slug
-         << endl;
-    OrderHandling::DeleteOrder(order["id"]);
-    return;
+  
+  switch (remote_trade.Tstate)
+  {
+    case VARS::tradeType::sell: {
+      Sorting::SetBestTradePrice(remote_trade);
+      OrderHandling::UpdateOrder(order["id"], remote_trade);
+      break;
+    }
+    case VARS::tradeType::buy: {
+      json item = FindItem(remote_trade.id);
+      auto validated_trade = Sorting::ValidTrade(remote_trade.slug, item["tags"], VARS::Settings.log);
+      
+      if (!validated_trade.has_value() || VARS::Settings.plat - validated_trade->buy < 0) {
+        cout << "[Attention] this trade became invalid: " << remote_trade.slug << endl;
+        OrderHandling::DeleteOrder(order["id"]);
+        return;
+      }
+      else {
+        OrderHandling::UpdateOrder(order["id"], validated_trade.value());
+        return;
+      }
+      break;
+    }
   }
-  if (validated_trade.has_value()) {
-    remote_trade.buy = validated_trade->buy;
-    remote_trade.sell = validated_trade->sell;
-
-    OrderHandling::UpdateOrder(order["id"], remote_trade);
-    return;
-  }
+  
 }
 
-void HandleAllTrades() {
+void ManageAllTrades() {
   json trades_remote =
       CurlReq::q
           .Add([] {

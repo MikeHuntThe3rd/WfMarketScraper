@@ -7,6 +7,8 @@
 namespace Sorting {
 std::string slug = "";
 std::ofstream logfile;
+
+//trade validation
 bool Frequency(itemType type, std::optional<std::any> data) {
   json stats =
       CurlReq::q
@@ -58,7 +60,7 @@ bool Frequency(itemType type, std::optional<std::any> data) {
   }
 }
 
-std::optional<Trade> RankBasedMargin(json orders) {
+optional<Trade> RankBasedMargin(json orders) {
   unordered_map<int, VARS::rank> ranks;
   auto addIfNew = [&ranks](int level) -> void {
     auto iter = ranks.find(level);
@@ -123,7 +125,7 @@ std::optional<Trade> RankBasedMargin(json orders) {
   }
 }
 
-std::optional<Trade> BasicMargin(json orders) {
+optional<Trade> BasicMargin(json orders) {
   int buy = std::numeric_limits<int>::min();
   int sell = std::numeric_limits<int>::max();
   bool buy_trade = false, sell_trade = false;
@@ -157,8 +159,8 @@ std::optional<Trade> BasicMargin(json orders) {
   }
 }
 
-std::optional<Trade> AyatanMargin(json orders) {
-  std::vector<ayatan_sculpture> sculptures;
+optional<Trade> AyatanMargin(json orders) {
+  vector<ayatan_sculpture> sculptures;
 
   auto findElement = [&sculptures](int cyanStars, int amberStars) {
     auto match =
@@ -300,4 +302,41 @@ optional<Trade> ValidTrade(string item, vector<string> tags, bool log) {
   logfile.close();
   return __return;
 }
+
+//trade tracking
+void SetBestTradePrice(VARS::Trade &trd){
+  json orders = CurlReq::q
+                    .Add([trd] {
+                      return CurlReq::__GET(
+                          "https://api.warframe.market/v2/orders/item/" +
+                          (string)trd.slug);
+                    })
+                    .get();
+  
+  for(json const &order : orders["data"]){
+    if(order["user"]["status"] != "ingame" || order["user"]["id"] == VARS::user_id) continue;
+
+    switch (trd.Itype)
+    {
+      case VARS::itemType::mod:
+      if(trd.level != order["rank"]) continue;
+      break;
+
+      case VARS::itemType::Ayatan:
+      if(trd.amberStar != order["amberStars"] || trd.cyanStar != order["cyanStars"]) continue;
+      break;
+
+      default:
+      break;
+    }
+
+    if(order["type"] == "sell" && order["platinum"] <= trd.sell){
+      trd.sell = order["platinum"].get<int>() - VARS::Settings.offset;
+    }
+    if(order["type"] == "buy" && order["platinum"] >= trd.buy){
+      trd.buy = order["platinum"].get<int>() + VARS::Settings.offset;
+    }
+  }
+}
+
 } // namespace Sorting
