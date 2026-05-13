@@ -14,13 +14,17 @@ using json = nlohmann::json;
 using namespace std;
 namespace Sorting {
 // variables
-extern std::string slug;
-extern std::ofstream logfile;
-// functions
-bool Frequency(itemType type, std::optional<std::any> data = std::nullopt);
-optional<Trade> ValidTrade(std::string item, std::vector<std::string> tags,
+extern string slug;
+extern ofstream logfile;
+//trade tracking
+void SetBestTradePrice(VARS::Trade &trd);
+
+// trade validation
+bool Frequency(itemType type, optional<any> data = nullopt);
+optional<Trade> ValidTrade(string item, vector<string> tags,
                            bool log = false);
-std::optional<Trade> RankBasedMargin(json orders);
-std::optional<Trade> AyatanMargin(json orders);
-std::optional<Trade> BasicMargin(json orders);
+                           
+optional<Trade> RankBasedMargin(json orders);
+optional<Trade> AyatanMargin(json orders);
+optional<Trade> BasicMargin(json orders);
 } // namespace Sorting

@@ -12,6 +12,7 @@
 #include <ostream>
 #include <string>
 #include <thread>
+#include <chrono>
 
 template <typename T>
 void AddCommandtriplex(CLI::App *set, string name, string help) {
@@ -117,7 +118,7 @@ void WebLoop() {
     for (json item : items["data"]) {
       auto trds = Trds::trades.Read();
       if (pos % (trds.size() + 10) == 0.f && trds.size() != 0)
-        OrderHandling::HandleAllTrades();
+        OrderHandling::ManageAllTrades();
       auto trade =
           Sorting::ValidTrade(item["slug"], item["tags"], VARS::Settings.log);
       if (trade.has_value() && VARS::Settings.plat - trade.value().buy >= 0)
@@ -145,10 +146,16 @@ void Run(CLI::App *run, optional<string> jwt) {
   if (run->got_subcommand("web")) {
     Initialize();
     WebLoop();
-  } else if (run->got_subcommand("update")) {
+  } else if (run->got_subcommand("track")) {
     Initialize();
-    OrderHandling::HandleAllTrades();
-    CurlReq::q.WaitUntilQueueEmpty();
+    CheckForEElog();
+    thread InGameTrades(OrderHandling::EElogChecking);
+    while (VARS::thread_run)
+    {
+      OrderHandling::ManageAllTrades();
+      this_thread::sleep_for(chrono::seconds(3));
+    }
+    InGameTrades.join();
     CurlReq::disconnect();
   } else if (run->got_subcommand("delete")) {
     Initialize();
@@ -166,6 +173,7 @@ void Run(CLI::App *run, optional<string> jwt) {
     std::thread InGameTrades(OrderHandling::EElogChecking);
     WebLoop();
     InGameTrades.join();
+    CurlReq::q.WaitUntilQueueEmpty();
     CurlReq::disconnect();
   }
 }
@@ -197,7 +205,7 @@ int main(int argc, char *argv[]) {
         "web", "scrapes the warframe market site for benefitial trades");
     run->add_subcommand("delete", "deletes all trades");
     run->add_subcommand("local", "runs local file checking");
-    run->add_subcommand("update", "updates all orders if it can");
+    run->add_subcommand("track", "tracks local trades and updates orders if it can");
 
     auto set = app.add_subcommand("set", "subcommand for managing settings");
 

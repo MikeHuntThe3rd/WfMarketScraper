@@ -45,6 +45,6 @@ bool UpdateOrder(string trade_id, Trade trd);
 // web trade manager functions
 json FindItem(string id);
 void ManageOneTrade(json order);
+void ManageAllTrades();
 void HandleNewTrade(Trade trd);
-void HandleAllTrades();
 } // namespace OrderHandling
