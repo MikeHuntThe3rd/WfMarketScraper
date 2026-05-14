@@ -4,7 +4,6 @@
 #include "StringOps.hpp"
 #include "VARS.hpp"
 #include "json.hpp"
-#include <fstream>
 #include <optional>
 #include <string>
 #include <vector>
@@ -14,7 +13,6 @@ using namespace std;
 namespace Sorting {
 // variables
 extern string slug;
-extern ofstream logfile;
 
 // trade tracking
 void SetBestTradePrice(VARS::Trade &trd);

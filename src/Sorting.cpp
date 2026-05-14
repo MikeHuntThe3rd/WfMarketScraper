@@ -3,10 +3,10 @@
 #include "StringOps.hpp"
 #include "VARS.hpp"
 #include <optional>
+#include <string>
 #include <unordered_map>
 namespace Sorting {
 std::string slug = "";
-std::ofstream logfile;
 
 // trade validation
 bool Frequency(itemType type, std::optional<std::any> data) {
@@ -20,37 +20,35 @@ bool Frequency(itemType type, std::optional<std::any> data) {
   int vol = 0;
   switch (type) {
   case itemType::basic:
-    logfile << "----------checking frequency for basic item" << std::endl;
+    VARS::WriteToLog("----------checking frequency for basic item");
     for (json curr : stats["payload"]["statistics_closed"]["48hours"]) {
       vol += curr["volume"].get<int>();
     }
-    logfile << "volume min: " << vol << std::endl;
+    VARS::WriteToLog("volume min: ", {to_string(vol)});
     break;
   case itemType::mod: {
     int rank = std::any_cast<int>(data.value());
-    logfile << "----------checking frequency for mod item" << std::endl;
+    VARS::WriteToLog("----------checking frequency for mod item");
     for (json curr : stats["payload"]["statistics_closed"]["48hours"]) {
       if ((int)curr["mod_rank"] == rank) {
         vol += curr["volume"].get<int>();
       }
     }
-    logfile << "volume min: " << vol << std::endl;
+    VARS::WriteToLog("volume min: ", {to_string(vol)});
     break;
   }
   case itemType::Ayatan: {
     auto sculpture = any_cast<ayatan_sculpture>(data.value());
-    logfile << "----------checking frequency for ayatan sculpture" << std::endl;
+    VARS::WriteToLog("----------checking frequency for ayatan sculpture");
     for (json curr : stats["payload"]["statistics_closed"]["48hours"]) {
       if (curr["cyan_stars"].get<int>() == sculpture.cyanStars &&
           curr["cyan_stars"].get<int>() == sculpture.amberStars) {
         vol += curr["volume"].get<int>();
       }
     }
-    logfile << "volume min: " << vol << std::endl;
+    VARS::WriteToLog("volume min: ", {to_string(vol)});
     break;
   }
-  default:
-    break;
   }
 
   if (vol > VARS::Settings.freq) {
@@ -109,10 +107,10 @@ optional<Trade> RankBasedMargin(json orders) {
     }
   }
   if (value_found) {
-    logfile << "margin: " << margin << std::endl;
-    logfile << "rank: " << level << std::endl;
+    VARS::WriteToLog("margin: ", {to_string(margin)});
+    VARS::WriteToLog("rank: ", {to_string(level)});
   } else
-    logfile << "no good mod trade found: " << std::endl;
+    VARS::WriteToLog("no good mod trade found: ", {slug});
 
   if (value_found && margin > VARS::Settings.margin &&
       Frequency(itemType::mod, level)) {
@@ -148,7 +146,7 @@ optional<Trade> BasicMargin(json orders) {
       buy_trade = true;
     }
   }
-  logfile << "margin: " << sell - buy << std::endl;
+  VARS::WriteToLog("margin: ", {to_string(sell - buy)});
   if ((sell_trade && buy_trade) && sell - buy > VARS::Settings.margin &&
       Frequency(itemType::basic)) {
     return Trade{slug,
@@ -235,13 +233,12 @@ optional<Trade> AyatanMargin(json orders) {
       best = SC;
     }
   }
-  logfile << "resulting margin: " << margin << endl;
-  logfile << "seperate sculptures: " << sculptures.size() << endl;
+  VARS::WriteToLog("resulting margin: ", {to_string(margin)});
+  VARS::WriteToLog("seperate sculptures: ", {to_string(sculptures.size())});
   if (best.has_value())
-    logfile << "struct of the best sculpture (stars: c, a):" << best->cyanStars
-            << ", " << best->amberStars << endl;
-  else
-    logfile << "best is empty" << endl;
+    VARS::WriteToLog(
+        "struct of the best sculpture (stars: c, a): ",
+        {to_string(best->cyanStars), ", ", to_string(best->amberStars)});
 
   if (best.has_value() && margin > VARS::Settings.margin &&
       Frequency(itemType::Ayatan, best.value())) {
@@ -260,9 +257,6 @@ optional<Trade> AyatanMargin(json orders) {
 optional<Trade> ValidTrade(string item, vector<string> tags, bool log) {
   slug = item;
   optional<Trade> __return;
-  if (log) {
-    logfile.open("out.log", std::ios::app);
-  }
   json orders = CurlReq::q
                     .Add([] {
                       return CurlReq::__GET(
@@ -271,12 +265,12 @@ optional<Trade> ValidTrade(string item, vector<string> tags, bool log) {
                     })
                     .get();
   if (std::find(tags.begin(), tags.end(), "ayatan_sculpture") != tags.end()) {
-    logfile << "==========AYATAN CHECK==========" << std::endl;
-    logfile << "slug: " << slug << std::endl;
+    VARS::WriteToLog("==========AYATAN CHECK==========");
+    VARS::WriteToLog("slug: ", {slug});
 
     auto result = AyatanMargin(orders);
     if (result.has_value()) {
-      logfile << "[Success] found good trade for: " << slug << std::endl;
+      VARS::WriteToLog("[Success] found good trade for: ", {slug});
       cout << "[Success] found good trade for: " << slug << std::endl;
     }
     __return = result;
@@ -284,28 +278,27 @@ optional<Trade> ValidTrade(string item, vector<string> tags, bool log) {
   } else if (std::find(tags.begin(), tags.end(), "mod") != tags.end() &&
              std::find(tags.begin(), tags.end(), "veiled_riven") ==
                  tags.end()) {
-    logfile << "==========MOD CHECK==========" << std::endl;
-    logfile << "slug: " << slug << std::endl;
+    VARS::WriteToLog("==========MOD CHECK==========");
+    VARS::WriteToLog("slug: ", {slug});
 
     auto result = RankBasedMargin(orders);
     if (result.has_value()) {
-      logfile << "[Success] found good trade for: " << slug << std::endl;
+      VARS::WriteToLog("[Success] found good trade for: ", {slug});
       cout << "[Success] found good trade for: " << slug << std::endl;
     }
 
     __return = result;
   } else {
-    logfile << "==========BASIC CHECK==========" << std::endl;
-    logfile << "slug: " << slug << std::endl;
+    VARS::WriteToLog("==========BASIC CHECK==========");
+    VARS::WriteToLog("slug: ", {slug});
 
     auto result = BasicMargin(orders);
     if (result.has_value()) {
-      logfile << "[Success] found good trade for: " << slug << std::endl;
+      VARS::WriteToLog("[Success] found good trade for: ", {slug});
       cout << "[Success] found good trade for: " << slug << std::endl;
     }
     __return = result;
   }
-  logfile.close();
   return __return;
 }
 
