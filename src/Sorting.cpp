@@ -8,7 +8,7 @@ namespace Sorting {
 std::string slug = "";
 std::ofstream logfile;
 
-//trade validation
+// trade validation
 bool Frequency(itemType type, std::optional<std::any> data) {
   json stats =
       CurlReq::q
@@ -80,13 +80,15 @@ optional<Trade> RankBasedMargin(json orders) {
 
     if (curr["user"]["status"] == "ingame" &&
         curr["platinum"].get<int>() - VARS::Settings.offset < value->sell &&
-        curr["type"] == "sell" && curr["user"]["id"].get<string>() != VARS::user_id) {
+        curr["type"] == "sell" &&
+        curr["user"]["id"].get<string>() != VARS::user_id) {
       value->sell_trade = true;
       value->sell = curr["platinum"].get<int>() - VARS::Settings.offset;
     }
     if (curr["user"]["status"] == "ingame" &&
         curr["platinum"].get<int>() + VARS::Settings.offset > value->buy &&
-        curr["type"] == "buy" && curr["user"]["id"].get<string>() != VARS::user_id) {
+        curr["type"] == "buy" &&
+        curr["user"]["id"].get<string>() != VARS::user_id) {
       value->buy_trade = true;
       value->buy = curr["platinum"].get<int>() + VARS::Settings.offset;
     }
@@ -129,17 +131,19 @@ optional<Trade> BasicMargin(json orders) {
   int buy = std::numeric_limits<int>::min();
   int sell = std::numeric_limits<int>::max();
   bool buy_trade = false, sell_trade = false;
-  
+
   for (json curr : orders["data"]) {
     if (curr["user"]["status"] == "ingame" &&
         curr["platinum"].get<int>() - VARS::Settings.offset < sell &&
-        curr["type"] == "sell" && curr["user"]["id"].get<string>() != VARS::user_id) {
+        curr["type"] == "sell" &&
+        curr["user"]["id"].get<string>() != VARS::user_id) {
       sell = curr["platinum"].get<int>() - VARS::Settings.offset;
       sell_trade = true;
     }
     if (curr["user"]["status"] == "ingame" &&
         curr["platinum"].get<int>() + VARS::Settings.offset > buy &&
-        curr["type"] == "buy" && curr["user"]["id"].get<string>() != VARS::user_id) {
+        curr["type"] == "buy" &&
+        curr["user"]["id"].get<string>() != VARS::user_id) {
       buy = curr["platinum"].get<int>() + VARS::Settings.offset;
       buy_trade = true;
     }
@@ -211,11 +215,13 @@ optional<Trade> AyatanMargin(json orders) {
 
     addIfNew(cyan, amber);
 
-    if (order["user"]["status"] == "ingame" && order["type"] == "sell" && order["user"]["id"].get<string>() != VARS::user_id) {
+    if (order["user"]["status"] == "ingame" && order["type"] == "sell" &&
+        order["user"]["id"].get<string>() != VARS::user_id) {
       priceCompare(cyan, amber, tradeType::sell,
                    order["platinum"].get<int>() - VARS::Settings.offset);
     }
-    if (order["user"]["status"] == "ingame" && order["type"] == "buy" && order["user"]["id"].get<string>() != VARS::user_id) {
+    if (order["user"]["status"] == "ingame" && order["type"] == "buy" &&
+        order["user"]["id"].get<string>() != VARS::user_id) {
       priceCompare(cyan, amber, tradeType::buy,
                    order["platinum"].get<int>() + VARS::Settings.offset);
     }
@@ -303,8 +309,8 @@ optional<Trade> ValidTrade(string item, vector<string> tags, bool log) {
   return __return;
 }
 
-//trade tracking
-void SetBestTradePrice(VARS::Trade &trd){
+// trade tracking
+void SetBestTradePrice(VARS::Trade &trd) {
   json orders = CurlReq::q
                     .Add([trd] {
                       return CurlReq::__GET(
@@ -312,34 +318,43 @@ void SetBestTradePrice(VARS::Trade &trd){
                           (string)trd.slug);
                     })
                     .get();
-  
-  int sell = numeric_limits<int>::max(), buy = numeric_limits<int>::min();;
-  for(json const &order : orders["data"]){
-    if(order["user"]["status"] != "ingame" || order["user"]["id"] == VARS::user_id) continue;
 
-    switch (trd.Itype)
-    {
-      case VARS::itemType::mod:
-      if(trd.level != order["rank"]) continue;
+  int sell = numeric_limits<int>::max(), buy = numeric_limits<int>::min();
+  ;
+  for (json const &order : orders["data"]) {
+    if (order["user"]["status"] != "ingame" ||
+        order["user"]["id"] == VARS::user_id)
+      continue;
+
+    switch (trd.Itype) {
+    case VARS::itemType::mod:
+      if (trd.level != order["rank"])
+        continue;
       break;
 
-      case VARS::itemType::Ayatan:
-      if(trd.amberStar != order["amberStars"] || trd.cyanStar != order["cyanStars"]) continue;
+    case VARS::itemType::Ayatan:
+      if (trd.amberStar != order["amberStars"] ||
+          trd.cyanStar != order["cyanStars"])
+        continue;
       break;
 
-      default:
+    default:
       break;
     }
 
-    if(order["type"] == "sell" && order["platinum"] <= sell){
+    if (order["type"] == "sell" && order["platinum"] <= sell) {
       sell = order["platinum"].get<int>() - VARS::Settings.offset;
     }
-    if(order["type"] == "buy" && order["platinum"] >= buy){
+    if (order["type"] == "buy" && order["platinum"] >= buy) {
       buy = order["platinum"].get<int>() + VARS::Settings.offset;
     }
   }
-  if(sell != numeric_limits<int>::max()) trd.sell = sell;
-  if(buy != numeric_limits<int>::min()) trd.buy = buy;
+  if (sell != numeric_limits<int>::max() &&
+      sell != trd.sell - VARS::Settings.offset)
+    trd.sell = sell;
+  if (buy != numeric_limits<int>::min() &&
+      buy != trd.buy + VARS::Settings.offset)
+    trd.buy = buy;
 }
 
 } // namespace Sorting
