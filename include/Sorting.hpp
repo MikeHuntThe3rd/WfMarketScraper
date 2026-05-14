@@ -4,8 +4,6 @@
 #include "StringOps.hpp"
 #include "VARS.hpp"
 #include "json.hpp"
-#include <fstream>
-#include <iostream>
 #include <optional>
 #include <string>
 #include <vector>
@@ -15,15 +13,14 @@ using namespace std;
 namespace Sorting {
 // variables
 extern string slug;
-extern ofstream logfile;
-//trade tracking
+
+// trade tracking
 void SetBestTradePrice(VARS::Trade &trd);
 
 // trade validation
 bool Frequency(itemType type, optional<any> data = nullopt);
-optional<Trade> ValidTrade(string item, vector<string> tags,
-                           bool log = false);
-                           
+optional<Trade> ValidTrade(string item, vector<string> tags, bool log = false);
+
 optional<Trade> RankBasedMargin(json orders);
 optional<Trade> AyatanMargin(json orders);
 optional<Trade> BasicMargin(json orders);

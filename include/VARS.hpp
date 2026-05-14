@@ -1,6 +1,9 @@
 #pragma once
 #include <cstdint>
+#include <fstream>
+#include <mutex>
 #include <optional>
+#include <vector>
 #ifdef _WIN32
 #define NOMINMAX
 #include <winsock2.h>
@@ -11,8 +14,6 @@
 #include <future>
 #include <limits>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 
 using json = nlohmann::json;
 using namespace std;
@@ -20,10 +21,12 @@ using namespace std;
 namespace VARS {
 // atomics
 inline std::atomic<bool> thread_run{true};
+inline mutex file_lock_mutex;
 // enums
 enum class itemType { basic, mod, Ayatan };
 enum class tradeType { buy, sell };
 enum class command { run, set };
+
 // structs
 struct costum_exit {
   int code;
@@ -89,4 +92,19 @@ inline const json DefSettings{{"margin", 10}, {"freq", 96},   {"plat", 0},
                               {"offset", 1},  {"log", false}, {"vt", false},
                               {"dos", false}, {"jwt", ""}};
 inline Settings_template Settings;
+
+// functions
+inline void WriteToLog(string line, vector<string> extras = vector<string>()) {
+  if (!Settings.log)
+    return;
+  if (!extras.empty()) {
+    for (string const &extra : extras) {
+      line += extra;
+    }
+  }
+  lock_guard<mutex> lock(file_lock_mutex);
+  ofstream log("out.log", std::ios::app);
+  log << line << endl;
+}
+
 } // namespace VARS
