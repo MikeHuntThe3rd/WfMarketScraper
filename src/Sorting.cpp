@@ -24,7 +24,7 @@ bool Frequency(itemType type, std::optional<std::any> data) {
     for (json curr : stats["payload"]["statistics_closed"]["48hours"]) {
       vol += curr["volume"].get<int>();
     }
-    VARS::WriteToLog("volume min: ", {to_string(vol)});
+    VARS::WriteToLog("volume min: " + to_string(vol));
     break;
   case itemType::mod: {
     int rank = std::any_cast<int>(data.value());
@@ -34,7 +34,7 @@ bool Frequency(itemType type, std::optional<std::any> data) {
         vol += curr["volume"].get<int>();
       }
     }
-    VARS::WriteToLog("volume min: ", {to_string(vol)});
+    VARS::WriteToLog("volume min: " + to_string(vol));
     break;
   }
   case itemType::Ayatan: {
@@ -46,7 +46,7 @@ bool Frequency(itemType type, std::optional<std::any> data) {
         vol += curr["volume"].get<int>();
       }
     }
-    VARS::WriteToLog("volume min: ", {to_string(vol)});
+    VARS::WriteToLog("volume min: " + to_string(vol));
     break;
   }
   }
@@ -107,10 +107,10 @@ optional<Trade> RankBasedMargin(json orders) {
     }
   }
   if (value_found) {
-    VARS::WriteToLog("margin: ", {to_string(margin)});
-    VARS::WriteToLog("rank: ", {to_string(level)});
+    VARS::WriteToLog("margin: " + to_string(margin));
+    VARS::WriteToLog("rank: " + to_string(margin));
   } else
-    VARS::WriteToLog("no good mod trade found: ", {slug});
+    VARS::WriteToLog("no good mod trade found: " + slug);
 
   if (value_found && margin > VARS::Settings.margin &&
       Frequency(itemType::mod, level)) {
@@ -146,7 +146,7 @@ optional<Trade> BasicMargin(json orders) {
       buy_trade = true;
     }
   }
-  VARS::WriteToLog("margin: ", {to_string(sell - buy)});
+  VARS::WriteToLog("margin: " + to_string(sell - buy));
   if ((sell_trade && buy_trade) && sell - buy > VARS::Settings.margin &&
       Frequency(itemType::basic)) {
     return Trade{slug,
@@ -233,12 +233,11 @@ optional<Trade> AyatanMargin(json orders) {
       best = SC;
     }
   }
-  VARS::WriteToLog("resulting margin: ", {to_string(margin)});
-  VARS::WriteToLog("seperate sculptures: ", {to_string(sculptures.size())});
+  VARS::WriteToLog("resulting margin: " + to_string(margin));
+  VARS::WriteToLog("seperate sculptures: " + to_string(sculptures.size()));
   if (best.has_value())
     VARS::WriteToLog(
-        "struct of the best sculpture (stars: c, a): ",
-        {to_string(best->cyanStars), ", ", to_string(best->amberStars)});
+        "struct of the best sculpture (stars: c, a): " + to_string(best->cyanStars) + ", " + to_string(best->amberStars));
 
   if (best.has_value() && margin > VARS::Settings.margin &&
       Frequency(itemType::Ayatan, best.value())) {
@@ -266,11 +265,11 @@ optional<Trade> ValidTrade(string item, vector<string> tags, bool log) {
                     .get();
   if (std::find(tags.begin(), tags.end(), "ayatan_sculpture") != tags.end()) {
     VARS::WriteToLog("==========AYATAN CHECK==========");
-    VARS::WriteToLog("slug: ", {slug});
+    VARS::WriteToLog("slug: " + slug);
 
     auto result = AyatanMargin(orders);
     if (result.has_value()) {
-      VARS::WriteToLog("[Success] found good trade for: ", {slug});
+      VARS::WriteToLog("[Success] found good trade for: " + slug);
       cout << "[Success] found good trade for: " << slug << std::endl;
     }
     __return = result;
@@ -279,22 +278,22 @@ optional<Trade> ValidTrade(string item, vector<string> tags, bool log) {
              std::find(tags.begin(), tags.end(), "veiled_riven") ==
                  tags.end()) {
     VARS::WriteToLog("==========MOD CHECK==========");
-    VARS::WriteToLog("slug: ", {slug});
+    VARS::WriteToLog("slug: " + slug);
 
     auto result = RankBasedMargin(orders);
     if (result.has_value()) {
-      VARS::WriteToLog("[Success] found good trade for: ", {slug});
+      VARS::WriteToLog("[Success] found good trade for: " + slug);
       cout << "[Success] found good trade for: " << slug << std::endl;
     }
 
     __return = result;
   } else {
     VARS::WriteToLog("==========BASIC CHECK==========");
-    VARS::WriteToLog("slug: ", {slug});
+    VARS::WriteToLog("slug: " + slug);
 
     auto result = BasicMargin(orders);
     if (result.has_value()) {
-      VARS::WriteToLog("[Success] found good trade for: ", {slug});
+      VARS::WriteToLog("[Success] found good trade for: " + slug);
       cout << "[Success] found good trade for: " << slug << std::endl;
     }
     __return = result;

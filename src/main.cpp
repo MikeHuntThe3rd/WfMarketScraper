@@ -14,6 +14,9 @@
 #include <thread>
 #include <chrono>
 
+const std::filesystem::path VARS::settings_path = "settings.json";
+const std::filesystem::path VARS::log_path = "out.log";
+
 template <typename T>
 void AddCommandtriplex(CLI::App *set, string name, string help) {
   auto cmd = set->add_subcommand(name, help);
@@ -255,7 +258,7 @@ int main(int argc, char *argv[]) {
     if (app.got_subcommand(set))
       Set(set);
   } catch (const VARS::costum_exit &e) {
-    cerr << "[Exit] " << e.msg << endl;
+    cerr << e.msg << endl;
     return e.code;
   } catch (const exception &e) {
     cerr << "[Fatal] " << e.what() << endl;

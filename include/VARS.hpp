@@ -1,19 +1,19 @@
 #pragma once
-#include <cstdint>
-#include <fstream>
-#include <mutex>
-#include <optional>
-#include <vector>
-#ifdef _WIN32
-#define NOMINMAX
-#include <winsock2.h>
-#endif
-
 #include "json.hpp"
 #include <atomic>
 #include <future>
 #include <limits>
 #include <string>
+#include <cstdint>
+#include <fstream>
+#include <mutex>
+#include <optional>
+#include <vector>
+
+#ifdef _WIN32
+#define NOMINMAX
+#include <winsock2.h>
+#endif
 
 using json = nlohmann::json;
 using namespace std;
@@ -21,7 +21,8 @@ using namespace std;
 namespace VARS {
 // atomics
 inline std::atomic<bool> thread_run{true};
-inline mutex file_lock_mutex;
+inline std::mutex log_lock, settings_lock;
+
 // enums
 enum class itemType { basic, mod, Ayatan };
 enum class tradeType { buy, sell };
@@ -30,7 +31,7 @@ enum class command { run, set };
 // structs
 struct costum_exit {
   int code;
-  string msg;
+  std::string msg;
 
   costum_exit(int code, string msg) : code(code), msg(msg) {}
 };
@@ -86,26 +87,43 @@ struct Task {
   std::promise<json> promise;
 };
 // global generics
+extern const std::filesystem::path settings_path, log_path;
 inline json items;
-inline string JWT = "";
-inline string user_id = "";
+inline std::string JWT = "";
+inline std::string user_id = "";
 inline const json DefSettings{{"margin", 10}, {"freq", 96},   {"plat", 0},
                               {"offset", 1},  {"log", false}, {"vt", false},
                               {"dos", false}, {"jwt", ""},    {"ee_path", ""}};
 inline Settings_template Settings;
 
 // functions
-inline void WriteToLog(string line, vector<string> extras = vector<string>()) {
+inline void WriteToLog(string line) {
   if (!Settings.log)
     return;
-  if (!extras.empty()) {
-    for (string const &extra : extras) {
-      line += extra;
-    }
-  }
-  lock_guard<mutex> lock(file_lock_mutex);
-  ofstream log("out.log", std::ios::app);
-  log << line << endl;
+
+  if(!std::filesystem::exists(log_path)) throw VARS::costum_exit{1, "[error] couldnt find path for logs"};
+  
+  std::lock_guard<mutex> lock(log_lock);
+  std::ofstream log("out.log", std::ios::app);
+  log << line << std::endl;
+}
+
+inline json GetSettings(){
+  if(!std::filesystem::exists(settings_path)) throw VARS::costum_exit{1, "[error] couldnt find path for settings"};
+
+  std::lock_guard<mutex> lock(settings_lock);
+  std::ifstream file(settings_path);
+
+  return json::parse(file);
+}
+
+inline void SetSettings(const json& new_settings){
+  if(!std::filesystem::exists(settings_path)) throw VARS::costum_exit{1, "[error] couldnt find path for settings"};
+
+  std::lock_guard<mutex> lock(settings_lock);
+  std::ofstream file(settings_path, std::ios::trunc);
+
+  file << new_settings.dump(4);
 }
 
 } // namespace VARS
