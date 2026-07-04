@@ -16,7 +16,6 @@
 #endif
 
 using json = nlohmann::json;
-using namespace std;
 
 namespace VARS {
 // atomics
@@ -33,7 +32,7 @@ struct costum_exit {
   int code;
   std::string msg;
 
-  costum_exit(int code, string msg) : code(code), msg(msg) {}
+  costum_exit(int code, std::string msg) : code(code), msg(msg) {}
 };
 struct Settings_template {
   int margin;
@@ -43,8 +42,8 @@ struct Settings_template {
   bool log;
   bool vt;
   bool dos;
-  string jwt;
-  string ee_path;
+  std::string jwt;
+  std::string ee_path;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Settings_template, margin, freq, plat,
                                    offset, log, vt, dos, jwt, ee_path)
@@ -97,13 +96,13 @@ inline const json DefSettings{{"margin", 10}, {"freq", 96},   {"plat", 0},
 inline Settings_template Settings;
 
 // functions
-inline void WriteToLog(string line) {
+inline void WriteToLog(std::string line) {
   if (!Settings.log)
     return;
 
   if(!std::filesystem::exists(log_path)) throw VARS::costum_exit{1, "[error] couldnt find path for logs"};
   
-  std::lock_guard<mutex> lock(log_lock);
+  std::lock_guard<std::mutex> lock(log_lock);
   std::ofstream log("out.log", std::ios::app);
   log << line << std::endl;
 }
@@ -111,7 +110,7 @@ inline void WriteToLog(string line) {
 inline json GetSettings(){
   if(!std::filesystem::exists(settings_path)) throw VARS::costum_exit{1, "[error] couldnt find path for settings"};
 
-  std::lock_guard<mutex> lock(settings_lock);
+  std::lock_guard<std::mutex> lock(settings_lock);
   std::ifstream file(settings_path);
 
   return json::parse(file);
@@ -120,7 +119,7 @@ inline json GetSettings(){
 inline void SetSettings(const json& new_settings){
   if(!std::filesystem::exists(settings_path)) throw VARS::costum_exit{1, "[error] couldnt find path for settings"};
 
-  std::lock_guard<mutex> lock(settings_lock);
+  std::lock_guard<std::mutex> lock(settings_lock);
   std::ofstream file(settings_path, std::ios::trunc);
 
   file << new_settings.dump(4);
