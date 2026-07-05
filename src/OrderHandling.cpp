@@ -19,8 +19,21 @@ namespace OrderHandling {
 #include "VDFparser.hpp"
 #include <windows.h>
 
+std::filesystem::path GetGlobalPath(){
+  char appdata_path[MAX_PATH];
+  DWORD appdata_size = sizeof(appdata_path);
+  std::filesystem::path wfmt_folder_path;
+
+  RegGetValueA(HKEY_CURRENT_USER, "Volatile Environment", "LOCALAPPDATA", RRF_RT_REG_SZ, nullptr, appdata_path, &appdata_size);
+  wfmt_folder_path = std::filesystem::path(appdata_path) / "WfMarketScraper";
+
+  if(!std::filesystem::exists(wfmt_folder_path)) std::filesystem::create_directory(wfmt_folder_path);
+
+  return wfmt_folder_path;
+}
+
 optional<string> FindEElogPath() {
-  filesystem::path full_path;
+  std::filesystem::path full_path;
   HKEY key;
   char steam_path[MAX_PATH], appdata_path[MAX_PATH];
   DWORD steam_size = sizeof(steam_path), appdata_size = sizeof(appdata_path);
@@ -68,7 +81,11 @@ optional<string> FindEElogPath() {
   }
   return nullopt;
 }
+
 #else
+std::filesystem::path GetGlobalPath(std::string fileName){
+}
+
 optional<string> FindEElogPath() { return ""; }
 #endif
 
@@ -174,7 +191,7 @@ vector<local_trade> ParseLocalTrades(vector<vector<string>> soldItems,
 
 void HandlelocalTrade(local_trade trd) {
   if (trd.id == "Platinum") {
-    json sett = json::parse(ifstream("settings.json"));
+    json sett = VARS::GetSettings();
     switch (trd.type) {
     case VARS::tradeType::sell: {
       sett["plat"] = sett["plat"].get<int>() - trd.amount;
@@ -185,7 +202,7 @@ void HandlelocalTrade(local_trade trd) {
       break;
     }
     }
-    ofstream("settings.json", ios::trunc) << sett.dump(4);
+    VARS::SetSettings(sett);
     return;
   }
 

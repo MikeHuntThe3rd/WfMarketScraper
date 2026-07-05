@@ -103,7 +103,7 @@ inline void WriteToLog(std::string line) {
   if(!std::filesystem::exists(log_path)) throw VARS::costum_exit{1, "[error] couldnt find path for logs"};
   
   std::lock_guard<std::mutex> lock(log_lock);
-  std::ofstream log("out.log", std::ios::app);
+  std::ofstream log(log_path, std::ios::app);
   log << line << std::endl;
 }
 
@@ -117,8 +117,6 @@ inline json GetSettings(){
 }
 
 inline void SetSettings(const json& new_settings){
-  if(!std::filesystem::exists(settings_path)) throw VARS::costum_exit{1, "[error] couldnt find path for settings"};
-
   std::lock_guard<std::mutex> lock(settings_lock);
   std::ofstream file(settings_path, std::ios::trunc);
 

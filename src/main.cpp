@@ -14,8 +14,9 @@
 #include <thread>
 #include <chrono>
 
-const std::filesystem::path VARS::settings_path = "settings.json";
-const std::filesystem::path VARS::log_path = "out.log";
+auto global_offset = OrderHandling::GetGlobalPath();
+const std::filesystem::path VARS::settings_path = global_offset / "settings.json";
+const std::filesystem::path VARS::log_path = global_offset / "out.log";
 
 template <typename T>
 void AddCommandtriplex(CLI::App *set, string name, string help) {
@@ -30,22 +31,21 @@ void AddCommandtriplex(CLI::App *set, string name, string help) {
 
   cmd->callback([name, reset, show, val]() {
     CreateSettings();
-    ifstream ifs("settings.json");
-    json setts = json::parse(ifs);
+    json setts = VARS::GetSettings();
 
     if (*show) {
       cout << "[Data] " << name << " value: " << setts[name] << endl;
     } else if (*reset) {
       cout << "[Attention] resetting: " << name << endl;
       setts[name] = VARS::DefSettings[name];
-      ofstream set_file("settings.json", ios::trunc);
-      set_file << setts.dump(4);
+      VARS::SetSettings(setts);
+
     } else if (val->has_value()) {
       cout << "[Attention] setting: " << name << endl
            << "to: " << boolalpha << val->value() << noboolalpha << endl;
       setts[name] = val->value();
-      ofstream set_file("settings.json", ios::trunc);
-      set_file << setts.dump(4);
+      VARS::SetSettings(setts);
+
     } else {
       throw VARS::costum_exit{1, "[Error] unknown option"};
     }
@@ -53,22 +53,18 @@ void AddCommandtriplex(CLI::App *set, string name, string help) {
 }
 
 void CreateSettings() {
-  if (!filesystem::exists("settings.json")) {
+  if (!filesystem::exists(VARS::settings_path)) {
     cout << "[Attention] settings.json generated with default settings" << endl;
-    ofstream settings_gen("settings.json");
-    settings_gen << VARS::DefSettings.dump(4);
+    VARS::SetSettings(VARS::DefSettings);
   }
 }
 
 void LoadSettings() {
-  json loaded_settings;
-  ifstream file("settings.json");
-  loaded_settings = json::parse(file);
-  VARS::Settings = loaded_settings.get<VARS::Settings_template>();
+  VARS::Settings = VARS::GetSettings().get<VARS::Settings_template>();
 }
 
 void Initialize() {
-  ofstream del("out.log", ios::trunc);
+  ofstream del(VARS::log_path, ios::trunc);
   del.close();
   CurlReq::setup();
   json jwt_status =
@@ -108,10 +104,9 @@ void CheckForEElog(){
     if(res.has_value()){
       VARS::Settings.ee_path = res.value();
 
-      json temp = json::parse(ifstream("settings.json"));
-      temp["ee_path"] = res.value();
-      ofstream sett("settings.json", ios::trunc);
-      sett << temp.dump(4);
+      json temp_sett = VARS::GetSettings();
+      temp_sett["ee_path"] = res.value();
+      VARS::SetSettings(temp_sett);
       
       return;
     }
@@ -123,7 +118,7 @@ void CheckForEElog(){
 void WebLoop() {
   CurlReq::setup();
   if (VARS::Settings.log) {
-    ofstream del("out.log", ios::trunc);
+    ofstream del(VARS::log_path, ios::trunc);
     del.close();
   }
   cout << "[Attention] current balance: " << VARS::Settings.plat << endl;
@@ -198,12 +193,10 @@ void Run(CLI::App *run, optional<string> jwt) {
 void Set(CLI::App *set) {
   CreateSettings();
   if (set->got_subcommand("reset_all")) {
-    ofstream of("settings.json", ios::trunc);
-    of << VARS::DefSettings.dump(4);
+    VARS::SetSettings(VARS::DefSettings);
   }
   if (set->got_subcommand("show_all")) {
-    ifstream ifs("settings.json");
-    json loaded_setts = json::parse(ifs);
+    json loaded_setts = VARS::GetSettings();
 
     for (const auto &[key, val] : loaded_setts.items()) {
       cout << key << ": " << boolalpha << val << noboolalpha << endl;

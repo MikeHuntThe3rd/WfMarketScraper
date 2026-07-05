@@ -36,6 +36,7 @@ optional<local_trade> HandleSet(vector<local_trade> &trades,
                                 local_trade current, json orders);
 
 optional<string> FindEElogPath();
+std::filesystem::path GetGlobalPath();
 
 // web operations
 bool PostOrder(Trade trd);
